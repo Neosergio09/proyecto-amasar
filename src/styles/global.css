@@ -28,8 +28,16 @@ body {
 }
 
 h1, h2, h3, .font-serif {
-  font-family: var(--font-serif);
+  /* Fuente de respaldo similar en tamaño a Playfair Display */
+  font-family: 'Playfair Display', Georgia, serif;
   font-weight: 700;
+  font-display: swap;
+}
+
+p {
+  /* Evita que el texto baile mientras carga */
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
 }
 
 /* --- COMPONENTES DE ACCESIBILIDAD (Solución al error 87%) --- */

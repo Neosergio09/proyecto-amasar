@@ -10,3 +10,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/**
+ * Genera una URL optimizada para imágenes almacenadas en Supabase.
+ * @param url - URL original del recurso.
+ * @param width - Ancho deseado en píxeles (por defecto 800).
+ * @returns URL con parámetros de transformación o placeholder si no hay URL.
+ */
+export function getOptimizedImage(url: string, width = 800) {
+  if (!url) return '/placeholder.jpg';
+
+  // Si la imagen viene de tu bucket de Supabase, añadimos parámetros de transformación
+  if (url.includes('supabase.co')) {
+    return `${url}?width=${width}&quality=75&format=webp`;
+  }
+  
+  return url;
+}
