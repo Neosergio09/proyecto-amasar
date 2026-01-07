@@ -1,29 +1,32 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Corregido: Agregamos la 'L' al final de URL
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+// Variables de entorno
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || import.meta.env.SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY;
 
-// Validación de seguridad para el Líder de Proyecto
+// Validación de seguridad
 if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("⚠️ ERROR: Verifica que PUBLIC_SUPABASE_URL esté bien escrita en tu .env y en el código.");
+  console.error("❌ Error de configuración: Faltan las llaves de Supabase.");
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
- * Genera una URL optimizada para imágenes almacenadas en Supabase.
- * @param url - URL original del recurso.
- * @param width - Ancho deseado en píxeles (por defecto 800).
- * @returns URL con parámetros de transformación o placeholder si no hay URL.
+ * Optimiza imágenes de Supabase mediante transformación en el Edge.
+ * Ayuda a pasar Lighthouse reduciendo el tamaño del Payload y mejorando el LCP.
  */
-export function getOptimizedImage(url: string, width = 800) {
+export function getOptimizedImage(url: string | null, width = 800) {
+  // 1. Manejo de nulos o strings vacíos
   if (!url) return '/placeholder.jpg';
 
-  // Si la imagen viene de tu bucket de Supabase, añadimos parámetros de transformación
+  // 2. Si es una imagen de Supabase, aplicamos transformación al vuelo
+  // Redimensionamos, bajamos calidad al 80% y forzamos formato WebP (más ligero)
   if (url.includes('supabase.co')) {
-    return `${url}?width=${width}&quality=75&format=webp`;
+    // Limpiamos la URL de parámetros previos si existen
+    const cleanUrl = url.split('?')[0];
+    return `${cleanUrl}?width=${width}&quality=80&format=webp`;
   }
   
+  // 3. Si es una imagen externa o local, se devuelve tal cual
   return url;
 }

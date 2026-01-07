@@ -1,6 +1,6 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
-import { supabase } from '../lib/supabase';
+import { supabase, getOptimizedImage } from '../lib/supabase';
 import { Image } from 'astro:assets';
 import heroImage from '../assets/unnamed.jpg';
 
@@ -8,20 +8,19 @@ import heroImage from '../assets/unnamed.jpg';
 const title = "Amasar | Galletas Artesanales, Café y Detalles para Momentos Únicos";
 const description = "El sabor artesanal de Bogotá en tu mesa. Galletas decoradas, café premium y jugos naturales para panaderías, eventos corporativos y celebraciones especiales.";
 
-// Obtenemos productos destacados para mostrar la variedad
+// Obtenemos productos destacados (Campos específicos para ahorrar ancho de banda)
 const { data: destacados } = await supabase
   .from('productos')
-  .select('*')
+  .select('id, nombre, descripcion, imagen_url, categoria')
   .limit(3);
 ---
 
 <MainLayout title={title} description={description}>
-  <section class="relative min-h-[90vh] flex items-center pt-20 overflow-hidden bg-background">
+  <section class="relative min-h-[90vh] flex items-center pt-20 overflow-hidden bg-background" aria-label="Introducción">
     <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
       <div class="z-10">
-        <div class="inline-block py-1 px-4 rounded-full bg-primary/10 mb-6">
-          <span class="text-primary font-bold text-xs uppercase">...</span>
-          <span class="text-primary brightness-75 font-black text-xs uppercase tracking-widest">
+        <div class="inline-block py-1 px-4 rounded-full bg-primary/10 mb-6 border border-primary/20">
+          <span class="text-orange-900 font-black text-[10px] uppercase tracking-[0.2em]">
             ARTESANÍA LOCAL • BOGOTÁ, CO
           </span>
         </div>
@@ -33,17 +32,18 @@ const { data: destacados } = await supabase
           Desde el detalle perfecto para un **cumpleaños**, el refrigerio de tu **empresa**, hasta el stock de tu **panadería**. Galletas, café y jugos con entrega garantizada.
         </p>
         <div class="flex flex-wrap gap-4">
-          <a href="/productos" class="bg-secondary text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-primary transition-all shadow-xl shadow-secondary/10">
+          <a href="/productos" class="bg-secondary text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-primary transition-all shadow-xl shadow-secondary/10" aria-label="Explorar nuestro catálogo de productos">
             Explorar Catálogo
           </a>
           <a href="/contacto" class="bg-white border-2 border-slate-200 text-secondary px-10 py-5 rounded-2xl font-bold text-lg hover:border-primary transition-all">
             Cotizar Evento
           </a>
         </div>
-        <div class="mt-12 pt-8 border-t border-slate-200 flex gap-8 opacity-60">
-            <p class="text-[10px] font-black uppercase tracking-tighter">✨ Panaderías</p>
-            <p class="text-[10px] font-black uppercase tracking-tighter">💼 Empresas</p>
-            <p class="text-[10px] font-black uppercase tracking-tighter">🎂 Fiestas</p>
+        
+        <div class="mt-12 pt-8 border-t border-slate-200 flex gap-8 opacity-100">
+            <p class="text-[10px] font-black uppercase tracking-tighter text-slate-700">✨ Panaderías</p>
+            <p class="text-[10px] font-black uppercase tracking-tighter text-slate-700">💼 Empresas</p>
+            <p class="text-[10px] font-black uppercase tracking-tighter text-slate-700">🎂 Fiestas</p>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ const { data: destacados } = await supabase
         <div class="aspect-[4/5] rounded-[3rem] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-700">
           <Image 
             src={heroImage} 
-            alt="Galletas artesanales decoradas para regalos y eventos en Bogotá" 
+            alt="Bodegón de galletas artesanales y café de origen Amasar en Bogotá" 
             class="w-full h-full object-cover scale-110 hover:scale-100 transition-transform duration-1000"
             loading="eager"
             format="webp"
@@ -60,39 +60,40 @@ const { data: destacados } = await supabase
         <div class="absolute -bottom-10 -left-10 bg-primary p-10 rounded-full text-white shadow-2xl border-8 border-background animate-bounce-slow">
             <p class="text-center font-bold">
                 <span class="block text-4xl">Bogotá</span>
-                <span class="text-[10px] uppercase tracking-tighter">Envío Express</span>
+                <span class="text-[10px] uppercase tracking-tighter font-black">Envío Express</span>
             </p>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="py-24 bg-white">
+  <section class="py-24 bg-white" aria-labelledby="soluciones-title">
     <div class="max-w-7xl mx-auto px-6">
+        <h2 id="soluciones-title" class="sr-only">Nuestras soluciones por tipo de cliente</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="p-12 rounded-[3rem] bg-slate-50 border border-slate-100 group hover:bg-primary transition-all duration-500">
-                <p class="text-4xl mb-6">🏪</p>
-                <h3 class="text-2xl font-serif mb-4 group-hover:text-white">Para Negocios</h3>
+                <p class="text-4xl mb-6" aria-hidden="true">🏪</p>
+                <h3 class="text-2xl font-serif mb-4 group-hover:text-white text-secondary">Para Negocios</h3>
                 <p class="text-slate-500 group-hover:text-white/80">Suministro recurrente para panaderías y cafeterías que buscan calidad premium constante.</p>
             </div>
             <div class="p-12 rounded-[3rem] bg-slate-50 border border-slate-100 group hover:bg-secondary transition-all duration-500">
-                <p class="text-4xl mb-6">🏢</p>
-                <h3 class="text-2xl font-serif mb-4 group-hover:text-white">Corporativo</h3>
+                <p class="text-4xl mb-6" aria-hidden="true">🏢</p>
+                <h3 class="text-2xl font-serif mb-4 group-hover:text-white text-secondary">Corporativo</h3>
                 <p class="text-slate-500 group-hover:text-white/80">Refrigerios para reuniones, regalos empresariales y lanzamientos de marca en Bogotá.</p>
             </div>
             <div class="p-12 rounded-[3rem] bg-slate-50 border border-slate-100 group hover:bg-primary transition-all duration-500">
-                <p class="text-4xl mb-6">🎁</p>
-                <h3 class="text-2xl font-serif mb-4 group-hover:text-white">Celebraciones</h3>
+                <p class="text-4xl mb-6" aria-hidden="true">🎁</p>
+                <h3 class="text-2xl font-serif mb-4 group-hover:text-white text-secondary">Celebraciones</h3>
                 <p class="text-slate-500 group-hover:text-white/80">Fiestas de cumpleaños, reuniones familiares y detalles personalizados para tu hogar.</p>
             </div>
         </div>
     </div>
   </section>
 
-  <section class="py-32 bg-background">
+  <section class="py-32 bg-background" aria-labelledby="catalogo-title">
     <div class="max-w-7xl mx-auto px-6">
       <div class="text-center mb-20">
-        <h2 class="text-4xl md:text-5xl font-serif text-secondary mb-4">Todo lo que necesitas para <span class="text-primary italic">sorprender</span></h2>
+        <h2 id="catalogo-title" class="text-4xl md:text-5xl font-serif text-secondary mb-4">Todo lo que necesitas para <span class="text-primary italic">sorprender</span></h2>
         <div class="h-1 w-20 bg-primary mx-auto"></div>
       </div>
 
@@ -104,9 +105,9 @@ const { data: destacados } = await supabase
           { name: 'Jugos', desc: '100% naturales y frescos', icon: '🥤' }
         ].map((cat) => (
           <div class="group p-10 rounded-[2.5rem] bg-white border border-slate-100 hover:border-primary transition-all hover:shadow-2xl text-center">
-            <span class="text-5xl mb-6 block transform group-hover:scale-110 transition-transform">{cat.icon}</span>
-            <h3 class="text-xl font-serif mb-2 group-hover:text-primary transition-colors">{cat.name}</h3>
-            <p class="text-slate-400 text-xs uppercase tracking-widest font-bold">{cat.desc}</p>
+            <span class="text-5xl mb-6 block transform group-hover:scale-110 transition-transform" aria-hidden="true">{cat.icon}</span>
+            <h3 class="text-xl font-serif mb-2 group-hover:text-primary transition-colors text-secondary">{cat.name}</h3>
+            <p class="text-slate-500 text-xs uppercase tracking-widest font-black">{cat.desc}</p>
           </div>
         ))}
       </div>
@@ -114,26 +115,32 @@ const { data: destacados } = await supabase
   </section>
 
   {destacados && destacados.length > 0 && (
-    <section class="py-32 bg-white">
+    <section class="py-32 bg-white" aria-labelledby="favoritos-title">
       <div class="max-w-7xl mx-auto px-6">
         <div class="flex justify-between items-end mb-16">
-            <h2 class="text-4xl font-serif text-secondary leading-tight">Nuestros favoritos <br/><span class="text-primary italic">del mes</span></h2>
-            <a href="/productos" class="text-primary font-bold border-b-2 border-primary pb-1 uppercase text-xs tracking-widest">Ver catálogo completo</a>
+            <h2 id="favoritos-title" class="text-4xl font-serif text-secondary leading-tight">Nuestros favoritos <br/><span class="text-primary italic">del mes</span></h2>
+            <a href="/productos" class="text-orange-900 font-black border-b-2 border-primary pb-1 uppercase text-[10px] tracking-widest hover:text-primary transition-colors">
+              Ver catálogo completo
+            </a>
         </div>
         <div class="grid md:grid-cols-3 gap-12">
           {destacados.map((prod) => (
-            <div class="group cursor-pointer">
+            <article class="group">
               <div class="aspect-square bg-slate-50 rounded-[3rem] mb-6 overflow-hidden border border-slate-100">
                 <img 
-                    src={prod.imagen_url || '/placeholder.jpg'} 
-                    alt={prod.nombre} 
+                    src={getOptimizedImage(prod.imagen_url, 600)} 
+                    alt={`Producto: ${prod.nombre}`} 
                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                    loading="lazy"
+                    decoding="async"
                 />
               </div>
-              <h4 class="font-serif text-2xl text-secondary mb-2">{prod.nombre}</h4>
+              <h3 class="font-serif text-2xl text-secondary mb-2">{prod.nombre}</h3>
               <p class="text-slate-500 text-sm mb-4 line-clamp-2">{prod.descripcion}</p>
-              <p class="text-primary font-black text-sm uppercase tracking-widest">Consultar disponibilidad</p>
-            </div>
+              <p class="text-orange-900 font-black text-xs uppercase tracking-widest bg-primary/5 inline-block px-3 py-1 rounded-lg">
+                Consultar disponibilidad
+              </p>
+            </article>
           ))}
         </div>
       </div>
