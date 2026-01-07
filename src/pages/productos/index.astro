@@ -1,0 +1,102 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// 1. Obtenemos los productos
+const { data: productos } = await supabase
+  .from('productos')
+  .select('*')
+  .order('categoria', { ascending: true });
+
+// 2. Extraemos las categorías únicas
+const categorias = [...new Set(productos?.map(p => p.categoria))];
+
+// FUNCIÓN AUXILIAR: Convierte "Chocolatería" en "chocolateria" para la URL
+const slugify = (text: string) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Elimina tildes
+    .trim()
+    .replace(/\s+/g, "-") // Reemplaza espacios por guiones
+    .replace(/[^\w-]+/g, ""); // Elimina caracteres especiales
+};
+
+const title = "Catálogo Completo de Suministros";
+const description = "Explora toda la variedad de Amasar: Galletas artesanales, café premium y más para tu panadería.";
+---
+
+<MainLayout title={title} description={description}>
+  <section class="bg-background min-h-screen py-24">
+    <div class="max-w-7xl mx-auto px-6">
+      
+      <div class="mb-16">
+        <nav class="flex text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-8 gap-2">
+          <a href="/" class="hover:text-primary transition-colors">Inicio</a>
+          <span>/</span>
+          <span class="text-secondary font-bold">Productos</span>
+        </nav>
+        <h1 class="text-6xl font-serif text-secondary mb-6">
+          Nuestra <span class="text-primary italic">Despensa</span>
+        </h1>
+      </div>
+
+      <div class="flex flex-wrap gap-4 mb-20">
+        {categorias.map(cat => (
+          <a 
+            href={`/productos/${slugify(cat)}`} 
+            class="group flex items-center gap-3 px-8 py-4 bg-white rounded-2xl border border-primary/10 hover:border-primary hover:shadow-xl hover:shadow-primary/10 transition-all"
+          >
+            <span class="font-bold text-xs uppercase tracking-widest text-secondary group-hover:text-primary">{cat}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </a>
+        ))}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+        {productos?.map((prod) => (
+          <div class="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 hover:shadow-2xl transition-all duration-500">
+            
+            <a href={`/productos/${slugify(prod.categoria)}`} class="block aspect-square overflow-hidden bg-slate-50 relative">
+              <img 
+                src={prod.imagen_url || '/placeholder.jpg'} 
+                alt={prod.nombre}
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+              />
+              <div class="absolute top-6 right-6">
+                 <span class="bg-secondary text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                   {prod.categoria}
+                 </span>
+              </div>
+            </a>
+
+            <div class="p-10">
+              <h3 class="text-2xl font-bold text-secondary mb-3">{prod.nombre}</h3>
+              <p class="text-slate-500 text-sm leading-relaxed mb-8 line-clamp-2">
+                {prod.descripcion || "Insumo premium seleccionado para elevar la calidad de tu panadería."}
+              </p>
+              
+              <div class="flex items-center justify-between border-t border-slate-100 pt-8">
+                <p class="text-2xl font-black text-primary">${prod.precio}</p>
+                <a 
+                  href={`https://wa.me/573000000000?text=Hola Amasar, quiero cotizar ${prod.nombre}`}
+                  target="_blank"
+                  class="bg-background text-secondary p-4 rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm"
+                  title="Cotizar por WhatsApp"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  </section>
+</MainLayout>

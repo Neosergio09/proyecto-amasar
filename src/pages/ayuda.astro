@@ -1,0 +1,57 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+
+const title = "Centro de Ayuda y Soporte";
+const description = "Todo lo que necesitas saber sobre tus pedidos, rastreo y productos de Amasar en Bogotá.";
+
+const faqs = [
+  {
+    cat: "Pedidos",
+    questions: [
+      { q: "¿Cuál es el pedido mínimo?", a: "Para entregas en Bogotá, el mínimo es de $150.000 COP o 2 cajas de producto." },
+      { q: "¿Hacen pedidos personalizados?", a: "Sí, personalizamos galletas con el logo de tu negocio para eventos o vitrina." }
+    ]
+  },
+  {
+    cat: "Rastreo",
+    questions: [
+      { q: "¿Dónde encuentro mi Tag?", a: "El Tag de rastreo se envía por WhatsApp y correo apenas confirmamos tu orden." },
+      { q: "¿El rastreo es en tiempo real?", a: "Sí, actualizamos el estado desde que entra al horno hasta que el repartidor llega a tu puerta." }
+    ]
+  }
+];
+---
+
+<MainLayout title={title} description={description}>
+  <section class="py-24 bg-background">
+    <div class="max-w-4xl mx-auto px-6">
+      <h1 class="text-6xl font-serif text-secondary mb-12 text-center">¿En qué podemos <span class="text-primary italic">ayudarte</span>?</h1>
+
+      <div class="space-y-16">
+        {faqs.map(section => (
+          <div>
+            <h2 class="text-xs uppercase tracking-[0.3em] text-primary font-black mb-8 border-b border-primary/10 pb-4">
+              {section.cat}
+            </h2>
+            <div class="grid gap-8">
+              {section.questions.map(item => (
+                <div class="group bg-white p-8 rounded-[2rem] border border-transparent hover:border-primary/20 transition-all shadow-sm">
+                  <h3 class="text-xl font-bold text-secondary mb-4">{item.q}</h3>
+                  <p class="text-slate-500 leading-relaxed text-sm">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="mt-20 bg-secondary p-12 rounded-[3rem] text-center text-white">
+        <h3 class="text-2xl font-serif mb-4">¿No encontraste lo que buscabas?</h3>
+        <p class="text-white/70 mb-8 text-sm">Nuestro equipo de soporte está listo para ayudarte con tu despacho.</p>
+        <a href="/contacto" class="inline-block bg-primary text-white px-10 py-4 rounded-full font-bold uppercase text-[10px] tracking-widest hover:scale-105 transition-transform">
+          Hablar con Soporte
+        </a>
+      </div>
+    </div>
+  </section>
+</MainLayout>

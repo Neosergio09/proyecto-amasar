@@ -1,0 +1,205 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// 1. SSR ACTIVO
+export const prerender = false;
+
+const title = "Escritorio de Control | Amasar";
+
+// 2. CARGA DE DATOS OPTIMIZADA (Paralelo)
+const [
+  { count: totalContactos },
+  { count: totalProductos },
+  { count: pedidosActivos },
+  { data: ultimosContactos, error: contactError }
+] = await Promise.all([
+  supabase.from('contactos').select('*', { count: 'exact', head: true }),
+  supabase.from('productos').select('*', { count: 'exact', head: true }),
+  supabase.from('pedidos').select('*', { count: 'exact', head: true }).neq('estado', 'Entregado'),
+  // Traemos los últimos 10 para que el filtro tenga material de búsqueda
+  supabase.from('contactos').select('*').order('creado_en', { ascending: false }).limit(10)
+]);
+
+if (contactError) console.error("Error en Dashboard:", contactError.message);
+
+const hoy = new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+const getBadgeStyles = (tipo) => {
+  switch(tipo) {
+    case 'Empresa': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+    case 'Particular': return 'bg-amber-50 text-amber-600 border-amber-100';
+    case 'Panaderia': return 'bg-blue-50 text-blue-600 border-blue-100';
+    default: return 'bg-slate-50 text-slate-600 border-slate-100';
+  }
+};
+---
+
+<MainLayout title={title} description="Gestión interna de Amasar SIA SAS">
+  <div class="min-h-screen bg-slate-50 flex">
+    
+    <aside class="w-72 bg-white border-r border-slate-200 hidden md:block">
+      <div class="p-10">
+        <span class="font-serif text-3xl font-black text-secondary tracking-tighter">AMASAR<span class="text-primary">.</span></span>
+      </div>
+      <nav class="mt-4 px-6 space-y-3">
+        <a href="/admin/dashboard" class="flex items-center gap-4 p-4 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/20">
+          <span class="text-xl">📊</span> Escritorio
+        </a>
+        <a href="/admin/productos" class="flex items-center gap-4 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all">
+          <span class="text-xl">🍪</span> Productos
+        </a>
+        <a href="/admin/pedidos" class="flex items-center gap-4 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all">
+          <span class="text-xl">🚚</span> Despachos
+        </a>
+        
+        <div class="pt-10">
+            <button id="logoutBtn" class="w-full flex items-center gap-4 p-4 text-red-400 hover:bg-red-50 rounded-2xl font-bold transition-all">
+              <span>🚪</span> Cerrar Sesión
+            </button>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="flex-grow p-8 md:p-16">
+      
+      <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-6">
+        <div>
+          <p class="text-primary font-bold text-xs uppercase tracking-widest mb-2">{hoy}</p>
+          <h1 class="text-5xl font-serif text-secondary leading-tight">Panel de <span class="italic text-primary">Control</span></h1>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-16">
+        <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <p class="text-[10px] uppercase tracking-widest text-slate-400 font-black mb-4">Total Contactos</p>
+          <h3 class="text-6xl font-serif text-secondary leading-none">{totalContactos || 0}</h3>
+        </div>
+        <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
+          <p class="text-[10px] uppercase tracking-widest text-slate-400 font-black mb-4">Productos</p>
+          <h3 class="text-6xl font-serif text-secondary leading-none">{totalProductos || 0}</h3>
+        </div>
+        <div class="bg-secondary p-10 rounded-[3rem] shadow-xl text-white">
+          <p class="text-[10px] uppercase tracking-widest text-white/60 font-black mb-4">Órdenes Activas</p>
+          <h3 class="text-6xl font-serif leading-none">{pedidosActivos || 0}</h3>
+        </div>
+      </div>
+
+      <section class="bg-white rounded-[3.5rem] shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-10 border-b border-slate-50 space-y-8">
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-serif text-secondary">Últimas <span class="text-primary italic">Solicitudes</span></h2>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-grow relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 opacity-30">🔍</span>
+                <input 
+                  type="text" 
+                  id="searchInput" 
+                  placeholder="Buscar por panadería o encargado..." 
+                  class="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+                />
+            </div>
+            <select id="typeFilter" class="p-4 rounded-2xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary text-sm font-bold text-secondary cursor-pointer">
+                <option value="todos">Todos los segmentos</option>
+                <option value="Panaderia">Panaderías</option>
+                <option value="Empresa">Empresas</option>
+                <option value="Particular">Particulares</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+          {ultimosContactos && ultimosContactos.length > 0 ? (
+            <table class="w-full text-left" id="contactsTable">
+              <thead>
+                <tr class="bg-slate-50/50 text-[10px] uppercase tracking-widest text-slate-400">
+                  <th class="px-10 py-6">Tipo</th>
+                  <th class="px-10 py-6">Entidad / Nombre</th>
+                  <th class="px-10 py-6">Interés</th>
+                  <th class="px-10 py-6 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-50">
+                {ultimosContactos.map((con) => (
+                  <tr class="contact-row hover:bg-slate-50/30 transition-colors" data-tipo={con.tipo_cliente}>
+                    <td class="px-10 py-8">
+                      <span class={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${getBadgeStyles(con.tipo_cliente)}`}>
+                        {con.tipo_cliente || 'N/A'}
+                      </span>
+                    </td>
+                    <td class="px-10 py-8">
+                        <p class="font-bold text-secondary text-lg search-target">{con.panaderia_nombre}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter search-target">{con.contacto_nombre}</p>
+                    </td>
+                    <td class="px-10 py-8 text-sm font-medium text-slate-600">
+                        {con.interes_producto}
+                    </td>
+                    <td class="px-10 py-8 text-right">
+                      <a 
+                        href={`https://wa.me/57${con.whatsapp}`} 
+                        target="_blank" 
+                        class="inline-flex items-center gap-2 bg-green-500 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 transition-all"
+                      >
+                        WhatsApp
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div class="p-20 text-center text-slate-400 italic">No hay solicitudes nuevas.</div>
+          )}
+        </div>
+      </section>
+    </main>
+  </div>
+</MainLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const initDashboard = async () => {
+    // 1. Auth Check
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '/admin/login'; return; }
+
+    // 2. LÓGICA DE FILTRADO EN TIEMPO REAL
+    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+    const typeFilter = document.getElementById('typeFilter') as HTMLSelectElement;
+    const contactRows = document.querySelectorAll('.contact-row') as NodeListOf<HTMLElement>;
+
+    const performFilter = () => {
+      const query = searchInput.value.toLowerCase();
+      const selectedType = typeFilter.value;
+
+      contactRows.forEach(row => {
+        const textContent = row.innerText.toLowerCase();
+        const rowType = row.getAttribute('data-id') || row.getAttribute('data-tipo'); // Compatibilidad de datos
+
+        const matchesSearch = textContent.includes(query);
+        const matchesType = selectedType === 'todos' || rowType === selectedType;
+
+        if (matchesSearch && matchesType) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    };
+
+    searchInput?.addEventListener('input', performFilter);
+    typeFilter?.addEventListener('change', performFilter);
+
+    // 3. Logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = '/admin/login';
+    });
+  };
+
+  document.addEventListener('astro:page-load', initDashboard);
+</script>

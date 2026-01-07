@@ -1,0 +1,140 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+
+// SEO optimizado para el mercado de Bogotá - Expandido a público general
+const title = "Contacto y Pedidos | Amasar Bogotá";
+const description = "Solicita tus galletas artesanales, café y jugos. Atendemos panaderías, eventos empresariales y pedidos particulares para fechas especiales en Bogotá.";
+---
+
+<MainLayout title={title} description={description}>
+  <section class="bg-background min-h-screen py-24">
+    <div class="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+      
+      <div>
+        <h1 class="text-6xl font-serif text-secondary mb-8 leading-tight">
+          Calidad artesanal para <span class="text-primary italic">momentos</span> únicos.
+        </h1>
+        <p class="text-lg text-slate-600 mb-10 leading-relaxed">
+          Ya seas una panadería buscando stock, una empresa planeando un evento o alguien que quiere lo mejor para su hogar, en Amasar tenemos la solución perfecta.
+        </p>
+        
+        <div class="space-y-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">🚚</div>
+            <p class="text-sm font-bold text-secondary uppercase tracking-widest">Despachos en toda Bogotá</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">🎉</div>
+            <p class="text-sm font-bold text-secondary uppercase tracking-widest">Ideal para fiestas y eventos</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">🤝</div>
+            <p class="text-sm font-bold text-secondary uppercase tracking-widest">Precios especiales mayoristas</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-10 md:p-14 rounded-[3rem] shadow-2xl border border-primary/5">
+        <form id="contactForm" class="space-y-6">
+          
+          <div>
+            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">¿Quién nos escribe?</label>
+            <select name="tipo_cliente" required class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-secondary">
+              <option value="Panaderia">Panadería / Pastelería</option>
+              <option value="Empresa">Empresa / Corporativo</option>
+              <option value="Particular">Persona Particular (Fiesta/Hogar)</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Nombre de la Entidad o Evento</label>
+            <input type="text" name="panaderia" placeholder="Ej: Mi Panadería, Empresa X o 'Fiesta de Cumpleaños'" required class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Tu Nombre</label>
+              <input type="text" name="nombre" required class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">WhatsApp</label>
+              <input type="tel" name="whatsapp" required placeholder="300 000 0000" class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Producto de interés</label>
+            <select name="interes" class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-secondary">
+              <option value="Galletas">Galletas Artesanales</option>
+              <option value="Cafe">Café de Origen</option>
+              <option value="Chocolateria">Chocolatería</option>
+              <option value="Varios">Mix de Productos</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">¿Cómo podemos ayudarte?</label>
+            <textarea name="mensaje" rows="3" placeholder="Cuéntanos más sobre tu pedido o evento..." class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all"></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-primary hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-95">
+            Enviar Solicitud
+          </button>
+        </form>
+        
+        <div id="successMessage" class="hidden text-center py-10 animate-fade-in">
+          <span class="text-5xl mb-4 block">✨</span>
+          <h3 class="text-2xl font-serif text-secondary mb-2">¡Mensaje Recibido!</h3>
+          <p class="text-slate-500 mb-8">Un asesor de Amasar te contactará por WhatsApp muy pronto para concretar los detalles.</p>
+          <button id="btnReset" class="text-primary font-bold text-xs uppercase tracking-widest border-b-2 border-primary pb-1 hover:text-secondary hover:border-secondary transition-all">
+            Enviar otra solicitud
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</MainLayout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  function setupForm() {
+    const form = document.getElementById('contactForm') as HTMLFormElement;
+    const successMessage = document.getElementById('successMessage');
+    const btnReset = document.getElementById('btnReset');
+
+    if (!form || !successMessage) return;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      
+      // Enviamos el nuevo campo 'tipo_cliente' a la base de datos
+      const { error } = await supabase.from('contactos').insert([{
+        tipo_cliente: formData.get('tipo_cliente'), // <--- Nuevo campo
+        panaderia_nombre: formData.get('panaderia'),
+        contacto_nombre: formData.get('nombre'),
+        whatsapp: formData.get('whatsapp'),
+        interes_producto: formData.get('interes'),
+        mensaje: formData.get('mensaje')
+      }]);
+
+      if (!error) {
+        form.classList.add('hidden');
+        successMessage.classList.remove('hidden');
+        form.reset();
+      } else {
+        console.error("Error en Supabase:", error.message);
+        alert("Hubo un error al enviar. Por favor intenta de nuevo.");
+      }
+    });
+
+    btnReset?.addEventListener('click', () => {
+      successMessage.classList.add('hidden');
+      form.classList.remove('hidden');
+    });
+  }
+
+  document.addEventListener('astro:page-load', setupForm);
+</script>

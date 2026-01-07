@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colores de marca personalizados */
+  --color-primary: #D97706;
+  --color-primary-dark: #B45309;
+  --color-secondary: #2D2424;
+  --color-background: #FFFBF0;
+  --color-surface: #FFFFFF;
+  
+  /* Tipografías */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Playfair Display', serif; /* Para títulos elegantes */
+
+  /* Radios de borde orgánicos (no tan cuadrados ni tan redondos) */
+  --radius-xl: 1rem;
+}
+
+/* Estilos Globales */
+:root {
+  background-color: var(--color-background);
+  color: var(--color-secondary);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-serif {
+  font-family: var(--font-serif);
+  font-weight: 700;
+}
+
+/* Transición suave para toda la página (UX) */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}

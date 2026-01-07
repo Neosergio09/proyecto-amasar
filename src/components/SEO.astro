@@ -1,0 +1,75 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  canonicalURL?: string;
+}
+
+const { 
+  title, 
+  description, 
+  image = '/og-image.jpg', // Asegúrate de tener esta imagen en public/
+  canonicalURL = Astro.url.href 
+} = Astro.props;
+
+// Schema.org para LocalBusiness (SEO Avanzado)
+const schema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WholesaleStore",
+  "name": "Amasar - Proveedor Mayorista de Panadería",
+  "description": "Distribuidor líder en Bogotá de galletas artesanales, café premium y concentrados de jugos para panaderías.",
+  "url": "https://amasar.co", // Cambia esto por tu dominio real
+  "telephone": "+573000000000",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Alamos Norte", // O la dirección específica
+    "addressLocality": "Bogotá",
+    "addressRegion": "Cundinamarca",
+    "addressCountry": "CO"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 4.6097, // Coordenadas de Bogotá
+    "longitude": -74.0817
+  },
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    "opens": "08:00",
+    "closes": "18:00"
+  }
+});
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta name="generator" content={Astro.generator} />
+
+<link rel="canonical" href={canonicalURL} />
+
+<title>{title} | Amasar - Proveedor Mayorista en Bogotá</title>
+<meta name="title" content={`${title} | Amasar`} />
+<meta name="description" content={description} />
+
+<meta property="og:type" content="website" />
+<meta property="og:url" content={Astro.url} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={new URL(image, Astro.url)} />
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content={Astro.url} />
+<meta property="twitter:title" content={title} />
+<meta property="twitter:description" content={description} />
+<meta property="twitter:image" content={new URL(image, Astro.url)} />
+
+<meta name="robots" content="index, follow" />
+<meta name="googlebot" content="index, follow" />
+<meta name="geo.region" content="CO-DC" />
+<meta name="geo.placename" content="Bogotá" />
+<meta name="geo.position" content="4.6097;-74.0817" />
+<meta name="ICBM" content="4.6097, -74.0817" />
+
+<script type="application/ld+json" set:html={schema} />

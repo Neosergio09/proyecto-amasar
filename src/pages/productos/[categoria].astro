@@ -1,0 +1,136 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// 1. SSR ACTIVO: Crucial para que los cambios en el Admin se reflejen en segundos
+export const prerender = false;
+
+const { categoria } = Astro.params;
+
+/** * 2. MAPEO MAESTRO (Traductor de Categorías)
+ * Resolvemos el problema de los acentos vinculando el slug (URL) 
+ * con el nombre estético y el término exacto de búsqueda en la DB.
+ */
+const categoriasConfig = {
+  galletas: { 
+    visible: 'Galletas Artesanales', 
+    db: 'GALLETAS' 
+  },
+  cafe: { 
+    visible: 'Café de Origen', 
+    db: 'CAFÉ' 
+  },
+  chocolateria: { 
+    visible: 'Chocolatería Premium', 
+    db: 'CHOCOLATERÍA' 
+  },
+  jugos: { 
+    visible: 'Concentrados de Jugos', 
+    db: 'JUGOS' 
+  }
+};
+
+// Obtenemos la configuración o usamos valores por defecto si no existe el mapeo
+const config = categoriasConfig[categoria] || { 
+  visible: 'Nuestros Productos', 
+  db: categoria 
+};
+
+// 3. CONSULTA ROBUSTA: Usamos el nombre mapeado con acentos para la DB
+const { data: productos, error } = await supabase
+  .from('productos')
+  .select('*')
+  .ilike('categoria', `%${config.db}%`) 
+  .order('nombre', { ascending: true });
+
+if (error) {
+  console.error("Error en Supabase:", error.message);
+}
+
+const title = `${config.visible} | Amasar Mayorista`;
+const description = `Proveedores de ${config.visible.toLowerCase()} en Bogotá. Calidad artesanal para tu negocio.`;
+---
+
+<MainLayout title={title} description={description}>
+  <section class="bg-background min-h-screen py-24">
+    <div class="max-w-7xl mx-auto px-6">
+      
+      <nav class="flex text-[10px] uppercase font-black tracking-[0.2em] text-slate-400 mb-12 gap-3 items-center">
+        <a href="/" class="hover:text-primary transition-colors">Inicio</a>
+        <span class="opacity-30">/</span>
+        <a href="/productos" class="hover:text-primary transition-colors">Productos</a>
+        <span class="opacity-30">/</span>
+        <span class="text-secondary">{config.visible}</span>
+      </nav>
+
+      <div class="mb-20">
+        <h1 class="text-7xl font-serif text-secondary mb-6 leading-none">
+          {/* Primera palabra */}
+          {config.visible.split(' ')[0]} 
+          
+          <span class="text-primary italic">
+            {/* Todas las palabras restantes (soporta 'de Origen', 'Artesanales', etc.) */}
+            {config.visible.split(' ').slice(1).join(' ')}
+          </span>
+        </h1>
+        <p class="text-lg text-slate-500 max-w-2xl leading-relaxed">
+          Nuestra selección de <span class="text-secondary font-bold">{categoria}</span> ha sido curada para ofrecer el balance perfecto entre tradición y rentabilidad para tu panadería en Bogotá.
+        </p>
+      </div>
+
+      {productos && productos.length > 0 ? (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
+          {productos.map((prod) => (
+            <div class="group">
+              <div class="relative aspect-square rounded-[3rem] overflow-hidden bg-slate-100 mb-8 transition-all duration-700 group-hover:shadow-2xl group-hover:shadow-primary/20">
+                <img 
+                  src={prod.imagen_url || '/placeholder.jpg'} 
+                  alt={prod.nombre}
+                  class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                />
+                <div class="absolute top-8 left-8">
+                   <span class="bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm">
+                     Artesanal
+                   </span>
+                </div>
+              </div>
+
+              <div class="px-4">
+                <h3 class="text-3xl font-serif text-secondary mb-3 group-hover:text-primary transition-colors">
+                  {prod.nombre}
+                </h3>
+                <p class="text-slate-400 text-sm leading-relaxed mb-8 line-clamp-2">
+                  {prod.descripcion || "Elaborado diariamente con procesos tradicionales para garantizar frescura y sabor."}
+                </p>
+                
+                <div class="flex items-center justify-between border-t border-slate-50 pt-8">
+                  <div>
+                    <p class="text-[9px] uppercase tracking-[0.2em] text-slate-300 font-bold mb-1">Precio Mayorista</p>
+                    <p class="text-3xl font-black text-secondary">
+                      ${prod.precio.toLocaleString('es-CO')}
+                    </p>
+                  </div>
+                  <a 
+                    href={`https://wa.me/573000000000?text=Hola Amasar, quiero cotizar: ${prod.nombre}`}
+                    target="_blank"
+                    class="bg-secondary text-white w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-primary hover:-rotate-12 transition-all shadow-lg active:scale-95"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="py-32 text-center bg-white rounded-[4rem] border-2 border-dashed border-slate-100">
+           <span class="text-6xl block mb-6">🍪</span>
+           <h3 class="text-2xl font-serif text-secondary mb-2">Estamos horneando novedades</h3>
+           <p class="text-slate-400">Pronto encontrarás más productos en la categoría <span class="font-bold">{config.visible}</span>.</p>
+        </div>
+      )}
+    </div>
+  </section>
+</MainLayout>
