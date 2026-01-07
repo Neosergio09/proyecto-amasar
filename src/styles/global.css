@@ -10,9 +10,9 @@
   
   /* Tipografías */
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Playfair Display', serif; /* Para títulos elegantes */
+  --font-serif: 'Playfair Display', serif;
 
-  /* Radios de borde orgánicos (no tan cuadrados ni tan redondos) */
+  /* Radios de borde orgánicos */
   --radius-xl: 1rem;
 }
 
@@ -32,7 +32,60 @@ h1, h2, h3, .font-serif {
   font-weight: 700;
 }
 
-/* Transición suave para toda la página (UX) */
+/* --- COMPONENTES DE ACCESIBILIDAD (Solución al error 87%) --- */
+
+@utility badge-artesanal {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  /* Color oscuro para máximo contraste sobre blanco */
+  color: #2D2424; 
+}
+
+@utility admin-badge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  border-width: 1px;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Variaciones con contraste optimizado (Nivel 800 sobre 50) */
+@utility admin-badge-panaderia {
+  background-color: #eff6ff; /* blue-50 */
+  color: #1e40af;            /* blue-800 */
+  border-color: #dbeafe;     /* blue-100 */
+}
+
+@utility admin-badge-empresa {
+  background-color: #eef2ff; /* indigo-50 */
+  color: #3730a3;            /* indigo-800 */
+  border-color: #e0e7ff;     /* indigo-100 */
+}
+
+@utility admin-badge-particular {
+  background-color: #fffbeb; /* amber-50 */
+  color: #92400e;            /* amber-800 */
+  border-color: #fef3c7;     /* amber-100 */
+}
+
+@utility table-category-tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #475569; /* slate-600 para legibilidad */
+}
+
+/* Transición suave para toda la página */
 * {
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }

@@ -16,7 +16,11 @@ const { data: productos } = await supabase
     
     <aside class="w-64 bg-white border-r border-slate-200 hidden md:block">
       <div class="p-8">
-        <span class="font-serif text-2xl font-black text-secondary">AMASAR<span class="text-primary">.</span></span>
+        {/* ACTUALIZACIÓN 1: Logo con Link e Imagen */}
+        <a href="/" class="flex items-center gap-3 group" aria-label="Ir a la página de inicio de Amasar">
+          <img src="/favicon.svg" alt="Amasar Logo" class="w-8 h-8 group-hover:rotate-12 transition-transform duration-500" />
+          <span class="font-serif text-2xl font-black text-secondary">AMASAR<span class="text-primary">.</span></span>
+        </a>
       </div>
       <nav class="mt-4 px-4 space-y-2">
         <a href="/admin/dashboard" class="flex items-center gap-3 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold text-sm transition-all">
@@ -96,12 +100,21 @@ const { data: productos } = await supabase
               </thead>
               <tbody class="divide-y divide-slate-50">
                 {productos?.map((prod) => (
-                  <tr class="hover:bg-slate-50/50 transition-colors">
+                  <tr class="group hover:bg-slate-50/50 transition-colors">
                     <td class="px-8 py-4">
-                      <img src={prod.imagen_url} alt={prod.nombre} class="w-12 h-12 object-cover rounded-lg" />
+                      <div class="w-12 h-12 rounded-lg overflow-hidden">
+                        <img 
+                          src={`${prod.imagen_url}?width=800&height=800&format=webp&quality=80`} 
+                          alt={prod.nombre} 
+                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </div>
                     </td>
                     <td class="px-8 py-4">
-                      <p class="font-bold text-secondary text-sm">{prod.nombre}</p>
+                      {/* ACTUALIZACIÓN 2: Nombre de producto optimizado */}
+                      <h3 class="font-serif text-2xl text-secondary mb-2">{prod.nombre}</h3>
                       <p class="text-[9px] uppercase text-slate-400">{prod.categoria}</p>
                     </td>
                     <td class="px-8 py-4 text-center">
@@ -165,7 +178,6 @@ const { data: productos } = await supabase
         .from('productos')
         .getPublicUrl(uniqueName);
 
-      // GUARDAR EN BASE DE DATOS (Eliminamos el campo precio aquí)
       const { error: dbError } = await supabase.from('productos').insert([{
         nombre: formData.get('nombre'),
         categoria: formData.get('categoria'),
