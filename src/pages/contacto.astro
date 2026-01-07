@@ -1,94 +1,102 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 
-// SEO optimizado para el mercado de Bogotá - Expandido a público general
+// SEO Estratégico Multicanal para el mercado de Bogotá
 const title = "Contacto y Pedidos | Amasar Bogotá";
-const description = "Solicita tus galletas artesanales, café y jugos. Atendemos panaderías, eventos empresariales y pedidos particulares para fechas especiales en Bogotá.";
+const description = "Solicita galletas artesanales, café y detalles para eventos. Atendemos panaderías, empresas y familias en Bogotá con entrega garantizada.";
 ---
 
 <MainLayout title={title} description={description}>
-  <section class="bg-background min-h-screen py-24">
-    <div class="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+  <section class="bg-background min-h-screen py-24 relative overflow-hidden">
+    <div class="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+    
+    <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center relative z-10">
       
       <div>
-        <h1 class="text-6xl font-serif text-secondary mb-8 leading-tight">
+        <span class="inline-block py-1 px-4 rounded-full bg-primary/10 text-primary font-bold text-[10px] uppercase tracking-[0.2em] mb-6">
+          Atención Personalizada
+        </span>
+        <h1 class="text-6xl md:text-7xl font-serif text-secondary mb-8 leading-tight">
           Calidad artesanal para <span class="text-primary italic">momentos</span> únicos.
         </h1>
         <p class="text-lg text-slate-600 mb-10 leading-relaxed">
-          Ya seas una panadería buscando stock, una empresa planeando un evento o alguien que quiere lo mejor para su hogar, en Amasar tenemos la solución perfecta.
+          Desde el abastecimiento recurrente para tu **panadería**, el catering de tu **empresa**, hasta el detalle especial para tu **hogar**. En Amasar Bogotá, horneamos soluciones a tu medida.
         </p>
         
-        <div class="space-y-6">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">🚚</div>
-            <p class="text-sm font-bold text-secondary uppercase tracking-widest">Despachos en toda Bogotá</p>
+        <div class="space-y-8">
+          <div class="flex items-center gap-5 group">
+            <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm group-hover:bg-primary/10 transition-colors">🚚</div>
+            <div>
+                <p class="text-sm font-black text-secondary uppercase tracking-widest">Cobertura Total</p>
+                <p class="text-xs text-slate-400">Despachos diarios en toda Bogotá.</p>
+            </div>
           </div>
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">🎉</div>
-            <p class="text-sm font-bold text-secondary uppercase tracking-widest">Ideal para fiestas y eventos</p>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">🤝</div>
-            <p class="text-sm font-bold text-secondary uppercase tracking-widest">Precios especiales mayoristas</p>
+          <div class="flex items-center gap-5 group">
+            <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm group-hover:bg-primary/10 transition-colors">✨</div>
+            <div>
+                <p class="text-sm font-black text-secondary uppercase tracking-widest">Personalización</p>
+                <p class="text-xs text-slate-400">Galletas impresas con tu logo o temática.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white p-10 md:p-14 rounded-[3rem] shadow-2xl border border-primary/5">
+      <div class="bg-white p-10 md:p-14 rounded-[3.5rem] shadow-2xl border border-primary/5">
         <form id="contactForm" class="space-y-6">
           
-          <div>
-            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">¿Quién nos escribe?</label>
-            <select name="tipo_cliente" required class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-secondary">
-              <option value="Panaderia">Panadería / Pastelería</option>
-              <option value="Empresa">Empresa / Corporativo</option>
-              <option value="Particular">Persona Particular (Fiesta/Hogar)</option>
-              <option value="Otro">Otro</option>
-            </select>
+          <div class="grid grid-cols-1 gap-6">
+            <div>
+              <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">¿Cómo te categorizas?</label>
+              <select name="tipo_cliente" required class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-secondary text-sm">
+                <option value="Panaderia">Panadería / Pastelería</option>
+                <option value="Empresa">Empresa / Evento Corporativo</option>
+                <option value="Particular">Particular (Fiesta o Hogar)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Nombre de la Entidad o Evento</label>
+              <input type="text" name="panaderia" placeholder="Ej: Masa Madre, Cumpleaños de Luciana..." required class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm" />
+            </div>
           </div>
 
-          <div>
-            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Nombre de la Entidad o Evento</label>
-            <input type="text" name="panaderia" placeholder="Ej: Mi Panadería, Empresa X o 'Fiesta de Cumpleaños'" required class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Tu Nombre</label>
-              <input type="text" name="nombre" required class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all" />
+              <input type="text" name="nombre" required class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm" />
             </div>
             <div>
               <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">WhatsApp</label>
-              <input type="tel" name="whatsapp" required placeholder="300 000 0000" class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all" />
+              <input type="tel" name="whatsapp" required placeholder="3XX XXX XXXX" class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm" />
             </div>
           </div>
 
           <div>
             <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Producto de interés</label>
-            <select name="interes" class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-secondary">
-              <option value="Galletas">Galletas Artesanales</option>
+            <select name="interes" class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-secondary text-sm">
+              <option value="Galletas">Galletas Decoradas</option>
               <option value="Cafe">Café de Origen</option>
               <option value="Chocolateria">Chocolatería</option>
-              <option value="Varios">Mix de Productos</option>
+              <option value="Varios">Varios / Mix</option>
             </select>
           </div>
 
           <div>
-            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">¿Cómo podemos ayudarte?</label>
-            <textarea name="mensaje" rows="3" placeholder="Cuéntanos más sobre tu pedido o evento..." class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all"></textarea>
+            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Detalles del pedido</label>
+            <textarea name="mensaje" rows="3" placeholder="Cuéntanos cantidades o fecha del evento..." class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm"></textarea>
           </div>
 
-          <button type="submit" class="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-primary hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-95">
-            Enviar Solicitud
+          <button id="submitBtn" type="submit" class="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-primary transition-all shadow-xl shadow-primary/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span id="btnText">Enviar Solicitud</span>
           </button>
         </form>
         
-        <div id="successMessage" class="hidden text-center py-10 animate-fade-in">
-          <span class="text-5xl mb-4 block">✨</span>
-          <h3 class="text-2xl font-serif text-secondary mb-2">¡Mensaje Recibido!</h3>
-          <p class="text-slate-500 mb-8">Un asesor de Amasar te contactará por WhatsApp muy pronto para concretar los detalles.</p>
-          <button id="btnReset" class="text-primary font-bold text-xs uppercase tracking-widest border-b-2 border-primary pb-1 hover:text-secondary hover:border-secondary transition-all">
-            Enviar otra solicitud
+        <div id="successMessage" class="hidden text-center py-12 animate-fade-in">
+          <div class="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">✓</div>
+          <h3 class="text-3xl font-serif text-secondary mb-3">¡Casi listo!</h3>
+          <p class="text-slate-500 mb-10 leading-relaxed">Hemos recibido tu información. Un maestro artesano de Amasar te escribirá por WhatsApp en breve.</p>
+          <button id="btnReset" class="text-primary font-black text-[10px] uppercase tracking-[0.2em] border-b-2 border-primary pb-1 hover:text-secondary hover:border-secondary transition-all">
+            Enviar otro mensaje
           </button>
         </div>
       </div>
@@ -103,16 +111,22 @@ const description = "Solicita tus galletas artesanales, café y jugos. Atendemos
     const form = document.getElementById('contactForm') as HTMLFormElement;
     const successMessage = document.getElementById('successMessage');
     const btnReset = document.getElementById('btnReset');
+    const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement;
+    const btnText = document.getElementById('btnText');
 
-    if (!form || !successMessage) return;
+    if (!form || !successMessage || !submitBtn || !btnText) return;
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      
+      // Bloqueamos el botón para evitar doble envío
+      submitBtn.disabled = true;
+      btnText.innerText = "Enviando...";
+
       const formData = new FormData(form);
       
-      // Enviamos el nuevo campo 'tipo_cliente' a la base de datos
       const { error } = await supabase.from('contactos').insert([{
-        tipo_cliente: formData.get('tipo_cliente'), // <--- Nuevo campo
+        tipo_cliente: formData.get('tipo_cliente'),
         panaderia_nombre: formData.get('panaderia'),
         contacto_nombre: formData.get('nombre'),
         whatsapp: formData.get('whatsapp'),
@@ -125,9 +139,13 @@ const description = "Solicita tus galletas artesanales, café y jugos. Atendemos
         successMessage.classList.remove('hidden');
         form.reset();
       } else {
-        console.error("Error en Supabase:", error.message);
-        alert("Hubo un error al enviar. Por favor intenta de nuevo.");
+        console.error("Error Supabase:", error.message);
+        alert("Lo sentimos, hubo un error técnico. Por favor, intenta de nuevo o escríbenos directamente.");
       }
+
+      // Restauramos el botón por si hay error
+      submitBtn.disabled = false;
+      btnText.innerText = "Enviar Solicitud";
     });
 
     btnReset?.addEventListener('click', () => {
@@ -138,3 +156,13 @@ const description = "Solicita tus galletas artesanales, café y jugos. Atendemos
 
   document.addEventListener('astro:page-load', setupForm);
 </script>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+</style>

@@ -1,3 +1,4 @@
+
 ---
 import SEO from '../components/SEO.astro';
 import '../styles/global.css'; 
@@ -31,11 +32,17 @@ const { title, description } = Astro.props;
       <nav class="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
         
         <a href="/" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/20 group-hover:rotate-12 transition-transform">A</div>
-          <span class="font-serif text-2xl font-black tracking-tighter text-secondary">
-            AMASAR<span class="text-primary">.</span>
-          </span>
-        </a>
+		<a href="/" class="flex items-center gap-3 group">
+          <img 
+            src="/favicon.svg" 
+            alt="Logo Amasar" 
+            class="w-50  h-50 transition-transform duration-500 group-hover:rotate-[360deg]" 
+          />
+		  
+		  <a href="/" class="flex items-center gap-3 group">	   
+													  
+          
+		  
         
         <div class="hidden lg:flex items-center gap-10">
           <ul class="flex items-center gap-8 font-bold text-[11px] uppercase tracking-[0.2em] text-secondary/70">
@@ -60,6 +67,7 @@ const { title, description } = Astro.props;
                   <span class="text-xl">🍫</span>
                   <span class="normal-case tracking-normal text-sm text-secondary">Chocolatería</span>
                 </a>
+														  
                 <a href="/productos/jugos" class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors">
                   <span class="text-xl">🥤</span>
                   <span class="normal-case tracking-normal text-sm text-secondary">Concentrados</span>
@@ -95,6 +103,14 @@ const { title, description } = Astro.props;
           </svg>
         </button>
       </nav>
+	  
+																										   
+																									  
+																									
+																														 
+																							  
+																																							
+			
     </header>
 
     <main class="flex-grow">
@@ -104,7 +120,10 @@ const { title, description } = Astro.props;
     <footer class="bg-secondary text-white/70 py-20">
       <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-16">
         <div class="space-y-6">
+											   
+																							   
           <span class="font-serif text-3xl font-bold text-white block">AMASAR<span class="text-primary">.</span></span>
+				
           <p class="text-sm leading-relaxed max-w-xs">
             Proveedores mayoristas de panadería artesanal y café premium. Elevamos la vitrina de los mejores negocios en Bogotá.
           </p>
@@ -127,6 +146,6 @@ const { title, description } = Astro.props;
       <div class="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-white/10 text-[10px] uppercase tracking-[0.3em] text-center opacity-50">
         &copy; {new Date().getFullYear()} Amasar S.A.S. — Diseñado con orgullo por Otterock
       </div>
-    </footer>
+    </footer>		 
   </body>
 </html>

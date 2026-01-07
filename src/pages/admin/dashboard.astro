@@ -7,25 +7,31 @@ export const prerender = false;
 
 const title = "Escritorio de Control | Amasar";
 
-// 2. CARGA DE DATOS OPTIMIZADA (Paralelo)
-const [
-  { count: totalContactos },
-  { count: totalProductos },
-  { count: pedidosActivos },
-  { data: ultimosContactos, error: contactError }
-] = await Promise.all([
+// 2. CARGA DE DATOS (Arreglamos la desestructuración para eliminar el rojo)
+const resultados = await Promise.all([
   supabase.from('contactos').select('*', { count: 'exact', head: true }),
   supabase.from('productos').select('*', { count: 'exact', head: true }),
   supabase.from('pedidos').select('*', { count: 'exact', head: true }).neq('estado', 'Entregado'),
-  // Traemos los últimos 10 para que el filtro tenga material de búsqueda
   supabase.from('contactos').select('*').order('creado_en', { ascending: false }).limit(10)
 ]);
 
+// Extraemos los datos con valores por defecto de forma segura
+const totalContactos = resultados[0].count ?? 0;
+const totalProductos = resultados[1].count ?? 0;
+const pedidosActivos = resultados[2].count ?? 0;
+const { data: ultimosContactos, error: contactError } = resultados[3];
+
 if (contactError) console.error("Error en Dashboard:", contactError.message);
 
-const hoy = new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+const hoy = new Date().toLocaleDateString('es-CO', { 
+  weekday: 'long', 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric' 
+});
 
-const getBadgeStyles = (tipo) => {
+// Tipamos el parámetro 'tipo' para evitar errores en el switch
+const getBadgeStyles = (tipo: string | null) => {
   switch(tipo) {
     case 'Empresa': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
     case 'Particular': return 'bg-amber-50 text-amber-600 border-amber-100';
@@ -73,15 +79,15 @@ const getBadgeStyles = (tipo) => {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-16">
         <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
           <p class="text-[10px] uppercase tracking-widest text-slate-400 font-black mb-4">Total Contactos</p>
-          <h3 class="text-6xl font-serif text-secondary leading-none">{totalContactos || 0}</h3>
+          <h3 class="text-6xl font-serif text-secondary leading-none">{totalContactos}</h3>
         </div>
         <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
           <p class="text-[10px] uppercase tracking-widest text-slate-400 font-black mb-4">Productos</p>
-          <h3 class="text-6xl font-serif text-secondary leading-none">{totalProductos || 0}</h3>
+          <h3 class="text-6xl font-serif text-secondary leading-none">{totalProductos}</h3>
         </div>
         <div class="bg-secondary p-10 rounded-[3rem] shadow-xl text-white">
           <p class="text-[10px] uppercase tracking-widest text-white/60 font-black mb-4">Órdenes Activas</p>
-          <h3 class="text-6xl font-serif leading-none">{pedidosActivos || 0}</h3>
+          <h3 class="text-6xl font-serif leading-none">{pedidosActivos}</h3>
         </div>
       </div>
 
@@ -164,29 +170,31 @@ const getBadgeStyles = (tipo) => {
   const initDashboard = async () => {
     // 1. Auth Check
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { window.location.href = '/admin/login'; return; }
+    if (!session) { 
+      window.location.href = '/admin/login'; 
+      return; 
+    }
 
-    // 2. LÓGICA DE FILTRADO EN TIEMPO REAL
-    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
-    const typeFilter = document.getElementById('typeFilter') as HTMLSelectElement;
+    // 2. LÓGICA DE FILTRADO
+    const searchInput = document.getElementById('searchInput') as HTMLInputElement | null;
+    const typeFilter = document.getElementById('typeFilter') as HTMLSelectElement | null;
     const contactRows = document.querySelectorAll('.contact-row') as NodeListOf<HTMLElement>;
 
     const performFilter = () => {
+      if (!searchInput || !typeFilter) return;
+
       const query = searchInput.value.toLowerCase();
       const selectedType = typeFilter.value;
 
       contactRows.forEach(row => {
         const textContent = row.innerText.toLowerCase();
-        const rowType = row.getAttribute('data-id') || row.getAttribute('data-tipo'); // Compatibilidad de datos
+        // Usamos solo 'data-tipo' para ser consistentes con el HTML de arriba
+        const rowType = row.getAttribute('data-tipo'); 
 
         const matchesSearch = textContent.includes(query);
         const matchesType = selectedType === 'todos' || rowType === selectedType;
 
-        if (matchesSearch && matchesType) {
-          row.style.display = "";
-        } else {
-          row.style.display = "none";
-        }
+        row.style.display = (matchesSearch && matchesType) ? "" : "none";
       });
     };
 
@@ -196,10 +204,11 @@ const getBadgeStyles = (tipo) => {
     // 3. Logout
     const logoutBtn = document.getElementById('logoutBtn');
     logoutBtn?.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      window.location.href = '/admin/login';
+      const { error } = await supabase.auth.signOut();
+      if (!error) window.location.href = '/admin/login';
     });
   };
 
+  // Escuchar el evento de carga de Astro (compatible con View Transitions)
   document.addEventListener('astro:page-load', initDashboard);
 </script>

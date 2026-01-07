@@ -1,57 +1,130 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 
-const title = "Centro de Ayuda y Soporte";
-const description = "Todo lo que necesitas saber sobre tus pedidos, rastreo y productos de Amasar en Bogotá.";
+// SEO Estratégico para Bogotá - Multicanal
+const title = "Centro de Ayuda | Amasar Bogotá";
+const description = "Todo lo que necesitas saber sobre tus pedidos de galletas, servicios para eventos, envíos en Bogotá y rastreo de órdenes.";
 
 const faqs = [
   {
-    cat: "Pedidos",
+    cat: "Pedidos y Cantidades",
+    icon: "🛍️",
     questions: [
-      { q: "¿Cuál es el pedido mínimo?", a: "Para entregas en Bogotá, el mínimo es de $150.000 COP o 2 cajas de producto." },
-      { q: "¿Hacen pedidos personalizados?", a: "Sí, personalizamos galletas con el logo de tu negocio para eventos o vitrina." }
+      { 
+        q: "¿Cuál es el pedido mínimo?", 
+        a: "Para envíos gratuitos en Bogotá, el mínimo es de $150.000 COP. Sin embargo, para eventos o consumo familiar, puedes hacer pedidos desde $50.000 COP retirando en nuestro punto de despacho o asumiendo el costo del envío." 
+      },
+      { 
+        q: "¿Puedo personalizar mis galletas?", 
+        a: "¡Claro que sí! Personalizamos galletas con logos para empresas, nombres para fiestas infantiles o diseños exclusivos para vitrinas de panaderías. Solo cuéntanos tu idea por WhatsApp." 
+      }
     ]
   },
   {
-    cat: "Rastreo",
+    cat: "Eventos y Fiestas",
+    icon: "🎉",
     questions: [
-      { q: "¿Dónde encuentro mi Tag?", a: "El Tag de rastreo se envía por WhatsApp y correo apenas confirmamos tu orden." },
-      { q: "¿El rastreo es en tiempo real?", a: "Sí, actualizamos el estado desde que entra al horno hasta que el repartidor llega a tu puerta." }
+      { 
+        q: "¿Con cuánto tiempo debo pedir para una reunión?", 
+        a: "Para eventos sociales o reuniones empresariales, recomendamos agendar con al menos 48 horas de anticipación. Si es un pedido masivo (más de 500 unidades), una semana es ideal." 
+      },
+      { 
+        q: "¿Hacen entregas en salones comunales u oficinas?", 
+        a: "Sí, entregamos en cualquier dirección dentro del perímetro urbano de Bogotá. Nuestro equipo logístico garantiza que el producto llegue fresco para tu evento." 
+      }
+    ]
+  },
+  {
+    cat: "Rastreo de Órdenes",
+    icon: "📍",
+    questions: [
+      { 
+        q: "¿Dónde encuentro mi código (Tag)?", 
+        a: "Tu código único (ej: AM-2026-XXXX) se genera automáticamente y te llega por WhatsApp apenas confirmamos el pago de tu pedido." 
+      },
+      { 
+        q: "¿Cómo sé cuándo llega mi pedido?", 
+        a: "En nuestra sección de 'Rastreo' verás el progreso real. Cuando el estado cambie a 'En camino', significa que nuestro repartidor ya va hacia tu ubicación." 
+      }
     ]
   }
 ];
 ---
 
 <MainLayout title={title} description={description}>
-  <section class="py-24 bg-background">
-    <div class="max-w-4xl mx-auto px-6">
-      <h1 class="text-6xl font-serif text-secondary mb-12 text-center">¿En qué podemos <span class="text-primary italic">ayudarte</span>?</h1>
+  <section class="py-24 bg-background relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+
+    <div class="max-w-4xl mx-auto px-6 relative z-10">
+      <div class="text-center mb-16">
+        <span class="text-primary font-black uppercase text-[10px] tracking-[0.3em] mb-4 block">Soporte al Cliente</span>
+        <h1 class="text-6xl md:text-7xl font-serif text-secondary mb-6 leading-tight">Resolvamos tus <span class="text-primary italic">dudas</span></h1>
+        <p class="text-slate-500 max-w-lg mx-auto">Selecciona una categoría para encontrar la información que necesitas sobre Amasar.</p>
+      </div>
 
       <div class="space-y-16">
         {faqs.map(section => (
           <div>
-            <h2 class="text-xs uppercase tracking-[0.3em] text-primary font-black mb-8 border-b border-primary/10 pb-4">
-              {section.cat}
-            </h2>
-            <div class="grid gap-8">
+            <div class="flex items-center gap-4 mb-8 border-b border-primary/10 pb-4">
+                <span class="text-3xl">{section.icon}</span>
+                <h2 class="text-xs uppercase tracking-[0.3em] text-primary font-black">
+                  {section.cat}
+                </h2>
+            </div>
+            
+            <div class="grid gap-6">
               {section.questions.map(item => (
-                <div class="group bg-white p-8 rounded-[2rem] border border-transparent hover:border-primary/20 transition-all shadow-sm">
-                  <h3 class="text-xl font-bold text-secondary mb-4">{item.q}</h3>
-                  <p class="text-slate-500 leading-relaxed text-sm">{item.a}</p>
-                </div>
+                <details class="group bg-white rounded-[2rem] border border-slate-100 hover:border-primary/20 transition-all shadow-sm overflow-hidden">
+                  <summary class="flex justify-between items-center p-8 cursor-pointer list-none">
+                    <h3 class="text-lg font-bold text-secondary group-open:text-primary transition-colors pr-4">{item.q}</h3>
+                    <span class="text-primary transition-transform group-open:rotate-180">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </span>
+                  </summary>
+                  <div class="px-8 pb-8 animate-fade-in-down">
+                    <p class="text-slate-500 leading-relaxed text-sm border-t border-slate-50 pt-6">
+                        {item.a}
+                    </p>
+                  </div>
+                </details>
               ))}
             </div>
           </div>
         ))}
       </div>
 
-      <div class="mt-20 bg-secondary p-12 rounded-[3rem] text-center text-white">
-        <h3 class="text-2xl font-serif mb-4">¿No encontraste lo que buscabas?</h3>
-        <p class="text-white/70 mb-8 text-sm">Nuestro equipo de soporte está listo para ayudarte con tu despacho.</p>
-        <a href="/contacto" class="inline-block bg-primary text-white px-10 py-4 rounded-full font-bold uppercase text-[10px] tracking-widest hover:scale-105 transition-transform">
-          Hablar con Soporte
-        </a>
+      <div class="mt-24 relative">
+        <div class="absolute inset-0 bg-secondary rounded-[3.5rem] -rotate-1"></div>
+        <div class="relative bg-white p-12 md:p-16 rounded-[3.5rem] border border-slate-100 shadow-xl text-center rotate-1">
+            <h3 class="text-3xl font-serif text-secondary mb-4">¿Aún tienes preguntas?</h3>
+            <p class="text-slate-500 mb-10 max-w-sm mx-auto text-sm">Si tu duda es sobre un evento especial o una orden masiva, nuestro equipo te atiende personalmente.</p>
+            <div class="flex flex-col md:flex-row gap-4 justify-center">
+                <a href="/contacto" class="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-secondary transition-all shadow-lg shadow-primary/20">
+                  Escribir a Soporte
+                </a>
+                <a href="https://wa.me/573000000000" target="_blank" class="bg-green-500 text-white px-10 py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-green-600 transition-all shadow-lg shadow-green-200">
+                  WhatsApp Directo
+                </a>
+            </div>
+        </div>
       </div>
     </div>
   </section>
 </MainLayout>
+
+<style>
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+  
+  @keyframes fade-in-down {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .animate-fade-in-down {
+    animation: fade-in-down 0.3s ease-out forwards;
+  }
+</style>

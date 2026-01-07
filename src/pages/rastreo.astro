@@ -2,15 +2,11 @@
 import MainLayout from '../layouts/MainLayout.astro';
 import { supabase } from '../lib/supabase';
 
-// 1. VITAL: Forzar que la página sea dinámica
-// Sin esto, Astro no puede leer los parámetros de la URL en tiempo real
 export const prerender = false;
 
 let pedido = null;
 let errorBusqueda = null;
 
-// 2. Lógica de búsqueda mejorada
-// Limpiamos espacios y estandarizamos a mayúsculas
 const tag = Astro.url.searchParams.get('tag')?.toUpperCase().trim();
 
 if (tag) {
@@ -21,35 +17,40 @@ if (tag) {
     .single();
 
   if (error) {
-    // Si hay un error técnico (como falta de permisos RLS), lo vemos en la consola del servidor
-    console.error("Error en consulta Supabase:", error.message);
-    errorBusqueda = "No encontramos ningún pedido con ese código. Verifica que esté bien escrito.";
+    errorBusqueda = "No encontramos esa orden. Revisa el código que te enviamos por WhatsApp.";
   } else {
     pedido = data;
   }
 }
 
-// 3. Mapeo de estados con insensibilidad a mayúsculas
-// Esto evita que "En horno" falle si en la DB dice "En Horno"
-const estados = ["Preparación", "En horno", "Empacado", "En camino", "Entregado"];
+// Estados con Iconos para una mejor experiencia de usuario (B2B y B2C)
+const estados = [
+  { nombre: "Preparación", icono: "🥣" },
+  { nombre: "En horno", icono: "🔥" },
+  { nombre: "Empacado", icono: "🎁" },
+  { nombre: "En camino", icono: "🚚" },
+  { nombre: "Entregado", icono: "✨" }
+];
 
 const indiceEstado = pedido 
-  ? estados.findIndex(e => e.toLowerCase() === pedido.estado.toLowerCase()) 
+  ? estados.findIndex(e => e.nombre.toLowerCase() === pedido.estado.toLowerCase()) 
   : -1;
 
 const porcentajeProgreso = indiceEstado === -1 ? 0 : ((indiceEstado + 1) / estados.length) * 100;
 
-const title = "Rastreo de Pedidos | Amasar";
-const description = "Consulta el estado real de tu pedido mayorista en Bogotá.";
+const title = "Sigue tu Pedido | Amasar";
+const description = "Sigue el progreso de tu orden de galletas, café o eventos en Bogotá en tiempo real.";
 ---
 
 <MainLayout title={title} description={description}>
   <section class="bg-background min-h-[80vh] py-24">
     <div class="max-w-3xl mx-auto px-6">
       
-      <div class="text-center mb-16">
-        <h1 class="text-5xl font-serif text-secondary mb-4">Rastrea tu <span class="text-primary italic">Pedido</span></h1>
-        <p class="text-slate-500">Ingresa el código único asignado a tu despacho.</p>
+      <div class="text-center mb-12">
+        <h1 class="text-5xl md:text-6xl font-serif text-secondary mb-4">Sigue la <span class="text-primary italic">Magia</span></h1>
+        <p class="text-slate-500 max-w-md mx-auto leading-relaxed">
+          Ingresa el código que recibiste al confirmar tu pedido para ver en qué etapa se encuentra.
+        </p>
       </div>
 
       <form action="/rastreo" method="GET" class="relative mb-16">
@@ -57,71 +58,86 @@ const description = "Consulta el estado real de tu pedido mayorista en Bogotá."
           type="text" 
           name="tag" 
           value={tag || ''}
-          placeholder="Ej: AM-2026-001" 
-          class="w-full p-6 pr-40 rounded-3xl border-2 border-primary/10 bg-white focus:border-primary outline-none text-xl font-bold transition-all shadow-sm"
+          placeholder="Ej: AM-2026-8812" 
+          class="w-full p-8 pr-44 rounded-full border-none bg-white focus:ring-4 focus:ring-primary/20 outline-none text-xl font-bold transition-all shadow-xl shadow-secondary/5"
           required
         />
         <button 
           type="submit" 
-          class="absolute right-3 top-3 bottom-3 bg-secondary text-white px-8 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-primary transition-all shadow-lg active:scale-95"
+          class="absolute right-3 top-3 bottom-3 bg-secondary text-white px-10 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all active:scale-95"
         >
-          Consultar
+          Rastrear
         </button>
       </form>
 
-      {pedido && (
-        <div class="bg-white rounded-[3rem] p-10 md:p-16 shadow-2xl border border-primary/5 animate-fade-in">
+      {pedido ? (
+        <div class="bg-white rounded-[4rem] p-10 md:p-16 shadow-2xl border border-primary/5 animate-fade-in relative overflow-hidden">
           
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+          <div class="absolute top-0 right-0 p-8 opacity-5 text-8xl pointer-events-none">🍪</div>
+
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 relative z-10">
             <div>
-              <p class="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-black mb-2">Estado Actual</p>
-              <h2 class="text-4xl font-serif text-secondary">{pedido.estado}</h2>
-              <p class="text-sm text-slate-400 mt-2">Cliente: <span class="font-bold text-secondary">{pedido.cliente_nombre}</span></p>
+              <p class="text-[10px] uppercase tracking-[0.3em] text-primary font-black mb-2">Orden en curso</p>
+              <h2 class="text-4xl font-serif text-secondary">
+                {indiceEstado === 1 ? "¡Ya está en el horno!" : pedido.estado}
+              </h2>
+              <p class="text-sm text-slate-400 mt-2">Para: <span class="font-bold text-secondary">{pedido.cliente_nombre}</span></p>
             </div>
-            <div class="bg-primary/10 px-6 py-3 rounded-2xl border border-primary/10">
-              <p class="text-primary font-bold text-sm">Tag: {pedido.tag_rastreo}</p>
+            <div class="bg-slate-50 px-6 py-4 rounded-3xl border border-slate-100">
+              <p class="text-[10px] uppercase font-black text-slate-400 mb-1">Código de Rastreo</p>
+              <p class="text-secondary font-mono font-bold">{pedido.tag_rastreo}</p>
             </div>
           </div>
 
-          <div class="relative pt-1">
+          <div class="relative pt-1 mb-20">
             <div class="flex mb-6 items-center justify-between">
               <div>
-                <span class="text-[10px] font-black inline-block py-2 px-4 uppercase rounded-full text-primary bg-primary/10 tracking-widest">
-                  Logística en curso
-                </span>
-              </div>
-              <div class="text-right">
-                <span class="text-sm font-black text-primary">
-                  {Math.round(porcentajeProgreso)}%
+                <span class="text-[10px] font-black inline-block py-2 px-4 uppercase rounded-full text-white bg-secondary tracking-widest shadow-lg shadow-secondary/20">
+                  {Math.round(porcentajeProgreso)}% completado
                 </span>
               </div>
             </div>
             
-            <div class="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-slate-100 p-1">
+            <div class="overflow-hidden h-6 mb-4 flex rounded-full bg-slate-100 p-1.5 border border-slate-50">
               <div 
                 style={`width: ${porcentajeProgreso}%`} 
-                class="shadow-lg flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary rounded-full transition-all duration-1000 ease-out"
-              ></div>
+                class="shadow-inner flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary rounded-full transition-all duration-1000 ease-out relative"
+              >
+                <div class="absolute right-0 w-8 h-8 bg-white rounded-full shadow-md scale-125 border-4 border-primary"></div>
+              </div>
             </div>
           </div>
 
-          <div class="mt-16 grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-8">
             {estados.map((est, index) => (
-              <div class={`text-center transition-all duration-500 ${index <= indiceEstado ? 'opacity-100' : 'opacity-20'}`}>
-                <div class={`w-4 h-4 mx-auto rounded-full mb-3 border-4 border-white shadow-sm ${index <= indiceEstado ? 'bg-primary ring-4 ring-primary/20' : 'bg-slate-300'}`}></div>
-                <p class="text-[10px] uppercase font-black tracking-tighter leading-tight">{est}</p>
+              <div class={`text-center transition-all duration-700 ${index <= indiceEstado ? 'scale-100 opacity-100' : 'scale-90 opacity-20 grayscale'}`}>
+                <div class={`w-14 h-14 mx-auto rounded-3xl mb-4 flex items-center justify-center text-2xl shadow-sm border-2 ${index <= indiceEstado ? 'bg-white border-primary' : 'bg-slate-50 border-slate-100'}`}>
+                  {est.icono}
+                </div>
+                <p class="text-[10px] uppercase font-black tracking-tighter leading-tight text-secondary">{est.nombre}</p>
               </div>
             ))}
           </div>
 
+          <div class="mt-16 pt-10 border-t border-slate-50 text-center">
+             <p class="text-xs text-slate-400 italic">¿Tienes dudas con tu pedido? <a href="/contacto" class="text-primary font-bold hover:underline">Escríbenos por WhatsApp</a></p>
+          </div>
+
         </div>
+      ) : (
+        !errorBusqueda && (
+            <div class="text-center p-12 bg-white/50 rounded-[3rem] border border-dashed border-slate-200">
+                <p class="text-slate-400 text-sm">El código lo puedes encontrar en el mensaje de confirmación que enviamos a tu WhatsApp.</p>
+            </div>
+        )
       )}
 
       {errorBusqueda && (
-        <div class="bg-red-50 text-red-600 p-10 rounded-[2.5rem] text-center border border-red-100 animate-shake">
-          <span class="text-4xl block mb-4">🔍</span>
-          <p class="font-bold text-lg">{errorBusqueda}</p>
-          <p class="text-sm opacity-70 mt-2">Si el problema persiste, contacta a tu asesor comercial.</p>
+        <div class="bg-white p-12 rounded-[3rem] text-center shadow-xl border-b-4 border-red-400 animate-shake">
+          <span class="text-5xl block mb-6">🔍</span>
+          <h3 class="text-xl font-serif text-secondary mb-2">¡Ups! No lo encontramos</h3>
+          <p class="text-slate-500 text-sm mb-6">{errorBusqueda}</p>
+          <a href="/rastreo" class="text-primary font-black uppercase text-[10px] tracking-widest border-b-2 border-primary pb-1">Intentar de nuevo</a>
         </div>
       )}
 
@@ -131,21 +147,21 @@ const description = "Consulta el estado real de tu pedido mayorista en Bogotá."
 
 <style>
   @keyframes fade-in {
-    from { opacity: 0; transform: translateY(30px); }
+    from { opacity: 0; transform: translateY(40px); }
     to { opacity: 1; transform: translateY(0); }
   }
   
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
   }
 
   .animate-fade-in {
-    animation: fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fade-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .animate-shake {
-    animation: shake 0.4s ease-in-out;
+    animation: shake 0.5s ease-in-out;
   }
 </style>

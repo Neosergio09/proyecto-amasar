@@ -2,41 +2,27 @@
 import MainLayout from '../../layouts/MainLayout.astro';
 import { supabase } from '../../lib/supabase';
 
-// 1. SSR ACTIVO: Crucial para que los cambios en el Admin se reflejen en segundos
+// 1. SSR ACTIVO
 export const prerender = false;
 
 const { categoria } = Astro.params;
 
-/** * 2. MAPEO MAESTRO (Traductor de Categorías)
- * Resolvemos el problema de los acentos vinculando el slug (URL) 
- * con el nombre estético y el término exacto de búsqueda en la DB.
- */
+/** * 2. MAPEO MAESTRO CON TIPADO */
 const categoriasConfig = {
-  galletas: { 
-    visible: 'Galletas Artesanales', 
-    db: 'GALLETAS' 
-  },
-  cafe: { 
-    visible: 'Café de Origen', 
-    db: 'CAFÉ' 
-  },
-  chocolateria: { 
-    visible: 'Chocolatería Premium', 
-    db: 'CHOCOLATERÍA' 
-  },
-  jugos: { 
-    visible: 'Concentrados de Jugos', 
-    db: 'JUGOS' 
-  }
+  galletas: { visible: 'Galletas Artesanales', db: 'GALLETAS' },
+  cafe: { visible: 'Café de Origen', db: 'CAFÉ' },
+  chocolateria: { visible: 'Chocolatería Premium', db: 'CHOCOLATERÍA' },
+  jugos: { visible: 'Concentrados de Jugos', db: 'JUGOS' }
 };
 
-// Obtenemos la configuración o usamos valores por defecto si no existe el mapeo
-const config = categoriasConfig[categoria] || { 
-  visible: 'Nuestros Productos', 
-  db: categoria 
-};
+type CategoriaValida = keyof typeof categoriasConfig;
+const esValida = categoria && categoria in categoriasConfig;
 
-// 3. CONSULTA ROBUSTA: Usamos el nombre mapeado con acentos para la DB
+const config = esValida 
+  ? categoriasConfig[categoria as CategoriaValida] 
+  : { visible: 'Nuestros Productos', db: categoria || '' };
+
+// 3. CONSULTA A SUPABASE
 const { data: productos, error } = await supabase
   .from('productos')
   .select('*')
@@ -65,16 +51,13 @@ const description = `Proveedores de ${config.visible.toLowerCase()} en Bogotá. 
 
       <div class="mb-20">
         <h1 class="text-7xl font-serif text-secondary mb-6 leading-none">
-          {/* Primera palabra */}
           {config.visible.split(' ')[0]} 
-          
           <span class="text-primary italic">
-            {/* Todas las palabras restantes (soporta 'de Origen', 'Artesanales', etc.) */}
             {config.visible.split(' ').slice(1).join(' ')}
           </span>
         </h1>
         <p class="text-lg text-slate-500 max-w-2xl leading-relaxed">
-          Nuestra selección de <span class="text-secondary font-bold">{categoria}</span> ha sido curada para ofrecer el balance perfecto entre tradición y rentabilidad para tu panadería en Bogotá.
+          Nuestra selección de <span class="text-secondary font-bold">{categoria}</span> ha sido curada para ofrecer el balance perfecto entre tradición y calidad.
         </p>
       </div>
 
@@ -104,12 +87,7 @@ const description = `Proveedores de ${config.visible.toLowerCase()} en Bogotá. 
                 </p>
                 
                 <div class="flex items-center justify-between border-t border-slate-50 pt-8">
-                  <div>
-                    <p class="text-[9px] uppercase tracking-[0.2em] text-slate-300 font-bold mb-1">Precio Mayorista</p>
-                    <p class="text-3xl font-black text-secondary">
-                      ${prod.precio.toLocaleString('es-CO')}
-                    </p>
-                  </div>
+                  <span class="text-[10px] uppercase font-black tracking-widest text-slate-400">Consultar disponibilidad</span>
                   <a 
                     href={`https://wa.me/573000000000?text=Hola Amasar, quiero cotizar: ${prod.nombre}`}
                     target="_blank"
