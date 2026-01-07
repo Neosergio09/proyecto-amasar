@@ -19,9 +19,13 @@ const { data: destacados } = await supabase
   <section class="relative min-h-[90vh] flex items-center pt-20 overflow-hidden bg-background">
     <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
       <div class="z-10">
-        <span class="inline-block py-1 px-4 rounded-full bg-primary/10 text-primary font-bold text-xs uppercase tracking-widest mb-6">
-          Artesanía Local • Bogotá, CO
-        </span>
+        <div class="inline-block py-1 px-4 rounded-full bg-primary/10 mb-6">
+          <span class="text-primary font-bold text-xs uppercase">...</span>
+          <span class="text-primary brightness-75 font-black text-xs uppercase tracking-widest">
+            ARTESANÍA LOCAL • BOGOTÁ, CO
+          </span>
+        </div>
+
         <h1 class="text-6xl md:text-7xl font-serif leading-[1.1] mb-8 text-secondary">
           El sabor que <span class="italic text-primary">transforma</span> cada reunión.
         </h1>
@@ -128,7 +132,7 @@ const { data: destacados } = await supabase
               </div>
               <h4 class="font-serif text-2xl text-secondary mb-2">{prod.nombre}</h4>
               <p class="text-slate-500 text-sm mb-4 line-clamp-2">{prod.descripcion}</p>
-              <p class="text-primary font-black text-xl">${prod.precio}</p>
+              <p class="text-primary font-black text-sm uppercase tracking-widest">Consultar disponibilidad</p>
             </div>
           ))}
         </div>
