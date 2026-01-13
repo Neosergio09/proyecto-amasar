@@ -1,6 +1,6 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import { supabase, getOptimizedImage } from '../../lib/supabase'; // Importación optimizada
+import { supabase, getOptimizedImage } from '../../lib/supabase';
 
 // 1. Obtenemos los productos
 const { data: productos } = await supabase
@@ -11,7 +11,7 @@ const { data: productos } = await supabase
 // 2. Extraemos las categorías únicas
 const categorias = [...new Set(productos?.map(p => p.categoria))];
 
-// FUNCIÓN AUXILIAR: Convierte "Chocolatería" en "chocolateria" para la URL
+// FUNCIÓN AUXILIAR
 const slugify = (text: string) => {
   return text
     .toString()
@@ -28,6 +28,10 @@ const description = "Explora toda la variedad de Amasar: Galletas artesanales, c
 ---
 
 <MainLayout title={title} description={description}>
+  <link rel="preconnect" href="https://fonts.googleapis.com" slot="head" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin slot="head" />
+  <link rel="preconnect" href="https://dryeeosrkteamqwnfsqo.supabase.co" slot="head" />
+
   <section class="bg-background min-h-screen py-24">
     <div class="max-w-7xl mx-auto px-6">
       
@@ -62,12 +66,12 @@ const description = "Explora toda la variedad de Amasar: Galletas artesanales, c
             
             <a href={`/productos/${slugify(prod.categoria)}`} class="block aspect-square overflow-hidden bg-slate-50 relative">
               <img 
-                src={getOptimizedImage(prod.imagen_url, 800) || '/placeholder.jpg'} 
+                src={getOptimizedImage(prod.imagen_url, 600) || '/placeholder.jpg'} 
                 alt={prod.nombre}
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                 loading={index < 2 ? "eager" : "lazy"}
                 decoding="async"
-                fetchpriority={index < 2 ? "high" : "low"}
+                fetchpriority={index === 0 ? "high" : "auto"}
               />
               <div class="absolute top-6 right-6">
                  <span class="bg-secondary text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
@@ -77,8 +81,8 @@ const description = "Explora toda la variedad de Amasar: Galletas artesanales, c
             </a>
 
             <div class="p-10">
-              <h3 class="text-2xl font-bold text-secondary mb-3">{prod.nombre}</h3>
-              <p class="text-slate-700 text-sm leading-relaxed mb-8 line-clamp-2">
+              <h2 class="text-2xl font-bold text-secondary mb-3">{prod.nombre}</h2>
+              <p class="text-slate-800 text-sm leading-relaxed mb-8 line-clamp-2">
                 {prod.descripcion || "Insumo premium seleccionado para elevar la calidad de tu panadería."}
               </p>
               
