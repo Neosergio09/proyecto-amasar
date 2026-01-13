@@ -28,9 +28,10 @@ const description = "Explora toda la variedad de Amasar: Galletas artesanales, c
 ---
 
 <MainLayout title={title} description={description}>
-  <link rel="preconnect" href="https://fonts.googleapis.com" slot="head" />
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" slot="head" />
+  <link rel="dns-prefetch" href="https://dryeeosrkteamqwnfsqo.supabase.co" slot="head" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin slot="head" />
-  <link rel="preconnect" href="https://dryeeosrkteamqwnfsqo.supabase.co" slot="head" />
+  <link rel="preconnect" href="https://dryeeosrkteamqwnfsqo.supabase.co" crossorigin slot="head" />
 
   <section class="bg-background min-h-screen py-24">
     <div class="max-w-7xl mx-auto px-6">
@@ -66,8 +67,10 @@ const description = "Explora toda la variedad de Amasar: Galletas artesanales, c
             
             <a href={`/productos/${slugify(prod.categoria)}`} class="block aspect-square overflow-hidden bg-slate-50 relative">
               <img 
-                src={getOptimizedImage(prod.imagen_url, 600) || '/placeholder.jpg'} 
+                src={getOptimizedImage(prod.imagen_url, 400) || '/placeholder.jpg'} 
                 alt={prod.nombre}
+                width="400"
+                height="400"
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                 loading={index < 2 ? "eager" : "lazy"}
                 decoding="async"
