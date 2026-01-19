@@ -1,37 +1,61 @@
 ---
-import MainLayout from '../../layouts/MainLayout.astro';
-import { supabase } from '../../lib/supabase';
+import MainLayout from "../../layouts/MainLayout.astro";
+import { supabase } from "../../lib/supabase";
+import { Image } from "astro:assets";
 
 const title = "Administrar Productos | Amasar";
 
 // 1. Cargamos los productos para la tabla
 const { data: productos } = await supabase
-  .from('productos')
-  .select('*')
-  .order('categoria', { ascending: true });
+  .from("productos")
+  .select("*")
+  .order("categoria", { ascending: true });
 ---
 
 <MainLayout title={title} description="Gestión de inventario para Amasar">
   <div class="min-h-screen bg-slate-50 flex">
-    
     <aside class="w-64 bg-white border-r border-slate-200 hidden md:block">
       <div class="p-8">
-        <a href="/" class="flex items-center gap-3 group" aria-label="Ir a la página de inicio de Amasar">
-          <img src="/favicon.svg" alt="Amasar Logo" class="w-8 h-8 group-hover:rotate-12 transition-transform duration-500" />
-          <span class="font-serif text-2xl font-black text-secondary">AMASAR<span class="text-primary">.</span></span>
+        <a
+          href="/"
+          class="flex items-center gap-3 group"
+          aria-label="Ir a la página de inicio de Amasar"
+        >
+          <Image
+            src="/favicon.svg"
+            alt="Amasar Logo"
+            width={32}
+            height={32}
+            class="w-8 h-8 group-hover:rotate-12 transition-transform duration-500"
+          />
+          <span class="font-serif text-2xl font-black text-secondary"
+            >AMASAR<span class="text-primary">.</span></span
+          >
         </a>
       </div>
       <nav class="mt-4 px-4 space-y-2">
-        <a href="/admin/dashboard" class="flex items-center gap-3 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold text-sm transition-all">
+        <a
+          href="/admin/dashboard"
+          class="flex items-center gap-3 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold text-sm transition-all"
+        >
           📊 Escritorio
         </a>
-        <a href="/admin/productos" class="flex items-center gap-3 p-4 bg-primary/10 text-primary rounded-2xl font-bold text-sm">
+        <a
+          href="/admin/productos"
+          class="flex items-center gap-3 p-4 bg-primary/10 text-primary rounded-2xl font-bold text-sm"
+        >
           🍪 Productos
         </a>
-        <a href="/admin/pedidos" class="flex items-center gap-3 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold text-sm transition-all">
+        <a
+          href="/admin/pedidos"
+          class="flex items-center gap-3 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold text-sm transition-all"
+        >
           🚚 Pedidos
         </a>
-        <button id="logoutBtn" class="w-full flex items-center gap-3 p-4 text-red-400 hover:bg-red-50 rounded-2xl font-bold text-sm transition-all mt-20">
+        <button
+          id="logoutBtn"
+          class="w-full flex items-center gap-3 p-4 text-red-400 hover:bg-red-50 rounded-2xl font-bold text-sm transition-all mt-20"
+        >
           🚪 Cerrar Sesión
         </button>
       </nav>
@@ -39,24 +63,45 @@ const { data: productos } = await supabase
 
     <main class="flex-grow p-8 md:p-12">
       <header class="mb-12">
-        <h1 class="text-4xl font-serif text-secondary mb-2">Gestión de <span class="text-primary italic">Inventario</span></h1>
-        <p class="text-slate-500 text-sm">Sube fotos reales de tus productos al catálogo.</p>
+        <h1 class="text-4xl font-serif text-secondary mb-2">
+          Gestión de <span class="text-primary italic">Inventario</span>
+        </h1>
+        <p class="text-slate-500 text-sm">
+          Sube fotos reales de tus productos al catálogo.
+        </p>
       </header>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        
         <div class="lg:col-span-1">
-          <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 sticky top-32">
-            <h2 class="text-lg font-bold text-secondary mb-6">Nuevo Producto</h2>
+          <div
+            class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 sticky top-32"
+          >
+            <h2 class="text-lg font-bold text-secondary mb-6">
+              Nuevo Producto
+            </h2>
             <form id="productForm" class="space-y-4">
               <div>
-                <label class="block text-[10px] uppercase font-black text-slate-400 mb-2">Nombre</label>
-                <input type="text" name="nombre" required class="w-full p-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary" />
+                <label
+                  class="block text-[10px] uppercase font-black text-slate-400 mb-2"
+                  >Nombre</label
+                >
+                <input
+                  type="text"
+                  name="nombre"
+                  required
+                  class="w-full p-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary"
+                />
               </div>
 
               <div>
-                <label class="block text-[10px] uppercase font-black text-slate-400 mb-2">Categoría</label>
-                <select name="categoria" class="w-full p-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary">
+                <label
+                  class="block text-[10px] uppercase font-black text-slate-400 mb-2"
+                  >Categoría</label
+                >
+                <select
+                  name="categoria"
+                  class="w-full p-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary"
+                >
                   <option value="GALLETAS">Galletas</option>
                   <option value="CAFÉ">Café</option>
                   <option value="CHOCOLATERÍA">Chocolatería</option>
@@ -65,22 +110,49 @@ const { data: productos } = await supabase
               </div>
 
               <div>
-                <label class="block text-[10px] uppercase font-black text-slate-400 mb-2">Imagen Real</label>
+                <label
+                  class="block text-[10px] uppercase font-black text-slate-400 mb-2"
+                  >Imagen Real</label
+                >
                 <div class="relative group">
-                  <input type="file" id="fotoInput" accept="image/*" class="hidden" required />
-                  <label for="fotoInput" class="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 hover:bg-primary/5 hover:border-primary transition-all cursor-pointer">
+                  <input
+                    type="file"
+                    id="fotoInput"
+                    accept="image/*"
+                    class="hidden"
+                    required
+                  />
+                  <label
+                    for="fotoInput"
+                    class="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 hover:bg-primary/5 hover:border-primary transition-all cursor-pointer"
+                  >
                     <span class="text-2xl mb-2" aria-hidden="true">📸</span>
-                    <span id="fileName" class="text-[9px] font-bold text-slate-400 uppercase">Seleccionar archivo</span>
+                    <span
+                      id="fileName"
+                      class="text-[9px] font-bold text-slate-400 uppercase"
+                      >Seleccionar archivo</span
+                    >
                   </label>
                 </div>
               </div>
 
               <div>
-                <label class="block text-[10px] uppercase font-black text-slate-400 mb-2">Descripción</label>
-                <textarea name="descripcion" rows="2" class="w-full p-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary text-sm"></textarea>
+                <label
+                  class="block text-[10px] uppercase font-black text-slate-400 mb-2"
+                  >Descripción</label
+                >
+                <textarea
+                  name="descripcion"
+                  rows="2"
+                  class="w-full p-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary text-sm"
+                ></textarea>
               </div>
 
-              <button type="submit" id="submitBtn" class="w-full py-4 bg-secondary text-white rounded-xl font-bold uppercase tracking-widest text-[10px] hover:bg-primary transition-all shadow-lg disabled:opacity-50">
+              <button
+                type="submit"
+                id="submitBtn"
+                class="w-full py-4 bg-secondary text-white rounded-xl font-bold uppercase tracking-widest text-[10px] hover:bg-primary transition-all shadow-lg disabled:opacity-50"
+              >
                 Publicar en Vitrina
               </button>
             </form>
@@ -88,45 +160,57 @@ const { data: productos } = await supabase
         </div>
 
         <div class="lg:col-span-2">
-          <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+          <div
+            class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden"
+          >
             <table class="w-full text-left">
               <thead>
-                <tr class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-400">
+                <tr
+                  class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-400"
+                >
                   <th class="px-8 py-4">Foto</th>
                   <th class="px-8 py-4">Producto</th>
                   <th class="px-8 py-4 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-50">
-                {productos?.map((prod) => (
-                  <tr class="group hover:bg-slate-50/50 transition-colors">
-                    <td class="px-8 py-4">
-                      <div class="w-12 h-12 rounded-lg overflow-hidden bg-slate-100">
-                        {/* ACTUALIZACIÓN: Miniatura optimizada a 200px para ahorrar datos en la tabla */}
-                        <img 
-                          src={`${prod.imagen_url}?width=200&height=200&format=webp&quality=80`} 
-                          alt={`Foto de ${prod.nombre}`} 
-                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </div>
-                    </td>
-                    <td class="px-8 py-4">
-                      <h3 class="font-serif text-xl text-secondary mb-1 leading-tight">{prod.nombre}</h3>
-                      <p class="text-[9px] uppercase font-bold text-primary tracking-widest">{prod.categoria}</p>
-                    </td>
-                    <td class="px-8 py-4 text-center">
-                      <button 
-                        class="delete-btn text-red-400 hover:text-red-600 p-2 transition-transform hover:scale-125" 
-                        data-id={prod.id}
-                        aria-label={`Eliminar producto ${prod.nombre}`}
-                      >
-                        🗑️
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {
+                  productos?.map((prod) => (
+                    <tr class="group hover:bg-slate-50/50 transition-colors">
+                      <td class="px-8 py-4">
+                        <div class="w-12 h-12 rounded-lg overflow-hidden bg-slate-100">
+                          {/* ACTUALIZACIÓN: Miniatura optimizada a 200px para ahorrar datos en la tabla */}
+                          <Image
+                            src={prod.imagen_url}
+                            alt={`Foto de ${prod.nombre}`}
+                            width={200}
+                            height={200}
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+                      </td>
+                      <td class="px-8 py-4">
+                        <h3 class="font-serif text-xl text-secondary mb-1 leading-tight">
+                          {prod.nombre}
+                        </h3>
+                        <p class="text-[9px] uppercase font-bold text-primary tracking-widest">
+                          {prod.categoria}
+                        </p>
+                      </td>
+                      <td class="px-8 py-4 text-center">
+                        <button
+                          class="delete-btn text-red-400 hover:text-red-600 p-2 transition-transform hover:scale-125"
+                          data-id={prod.id}
+                          aria-label={`Eliminar producto ${prod.nombre}`}
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                }
               </tbody>
             </table>
           </div>
@@ -137,22 +221,22 @@ const { data: productos } = await supabase
 </MainLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase';
+  import { supabase } from "../../lib/supabase";
 
   const initProductManager = () => {
-    const form = document.getElementById('productForm') as HTMLFormElement;
-    const fotoInput = document.getElementById('fotoInput') as HTMLInputElement;
-    const fileName = document.getElementById('fileName');
-    const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement;
+    const form = document.getElementById("productForm") as HTMLFormElement;
+    const fotoInput = document.getElementById("fotoInput") as HTMLInputElement;
+    const fileName = document.getElementById("fileName");
+    const submitBtn = document.getElementById("submitBtn") as HTMLButtonElement;
 
-    fotoInput?.addEventListener('change', () => {
+    fotoInput?.addEventListener("change", () => {
       if (fotoInput.files && fileName) {
         fileName.innerText = fotoInput.files[0].name;
-        fileName.classList.add('text-primary');
+        fileName.classList.add("text-primary");
       }
     });
 
-    form?.addEventListener('submit', async (e) => {
+    form?.addEventListener("submit", async (e) => {
       e.preventDefault();
       submitBtn.disabled = true;
       submitBtn.innerText = "Subiendo...";
@@ -167,11 +251,11 @@ const { data: productos } = await supabase
         return;
       }
 
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const uniqueName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('productos')
+        .from("productos")
         .upload(uniqueName, file);
 
       if (uploadError) {
@@ -181,16 +265,18 @@ const { data: productos } = await supabase
         return;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('productos')
-        .getPublicUrl(uniqueName);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("productos").getPublicUrl(uniqueName);
 
-      const { error: dbError } = await supabase.from('productos').insert([{
-        nombre: formData.get('nombre'),
-        categoria: formData.get('categoria'),
-        imagen_url: publicUrl,
-        descripcion: formData.get('descripcion')
-      }]);
+      const { error: dbError } = await supabase.from("productos").insert([
+        {
+          nombre: formData.get("nombre"),
+          categoria: formData.get("categoria"),
+          imagen_url: publicUrl,
+          descripcion: formData.get("descripcion"),
+        },
+      ]);
 
       if (dbError) {
         alert("Error en base de datos: " + dbError.message);
@@ -201,16 +287,19 @@ const { data: productos } = await supabase
       }
     });
 
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('¿Eliminar este producto permanentemente?')) {
-          const { error } = await supabase.from('productos').delete().eq('id', id);
+    document.querySelectorAll(".delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-id");
+        if (confirm("¿Eliminar este producto permanentemente?")) {
+          const { error } = await supabase
+            .from("productos")
+            .delete()
+            .eq("id", id);
           if (!error) window.location.reload();
         }
       });
     });
   };
 
-  document.addEventListener('astro:page-load', initProductManager);
+  document.addEventListener("astro:page-load", initProductManager);
 </script>

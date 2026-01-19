@@ -20,6 +20,13 @@ export default defineConfig({
     imageService: true,
   }),
 
+  image: {
+    remotePatterns: [{
+      protocol: 'https',
+      hostname: 'dryeeosrkteamqwnfsqo.supabase.co',
+    }],
+  },
+
   // 3. INTEGRACIONES Y VITE
   vite: {
     plugins: [tailwindcss()],

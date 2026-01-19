@@ -1,0 +1,74 @@
+---
+
+---
+
+<div
+    id="web-vitals-monitor"
+    class="fixed bottom-4 right-4 z-50 p-3 bg-gray-900/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-700 text-xs font-mono hidden hover:opacity-100 transition-opacity duration-200"
+>
+    <div class="grid grid-cols-3 gap-x-4 gap-y-1">
+        <div class="flex flex-col items-center">
+            <span class="text-gray-400 font-semibold mb-0.5">LCP</span>
+            <span id="lcp-val" class="font-bold text-gray-500">--</span>
+        </div>
+        <div class="flex flex-col items-center border-l border-gray-700 pl-4">
+            <span class="text-gray-400 font-semibold mb-0.5">CLS</span>
+            <span id="cls-val" class="font-bold text-gray-500">--</span>
+        </div>
+        <div class="flex flex-col items-center border-l border-gray-700 pl-4">
+            <span class="text-gray-400 font-semibold mb-0.5">INP</span>
+            <span id="inp-val" class="font-bold text-gray-500">--</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    import { onLCP, onCLS, onINP } from "web-vitals";
+
+    const monitor = document.getElementById("web-vitals-monitor");
+    const lcpVal = document.getElementById("lcp-val");
+    const clsVal = document.getElementById("cls-val");
+    const inpVal = document.getElementById("inp-val");
+
+    if (monitor && lcpVal && clsVal && inpVal) {
+        // Show monitor once initialized
+        monitor.classList.remove("hidden");
+
+        function getRatingColor(rating: "good" | "needs-improvement" | "poor") {
+            switch (rating) {
+                case "good":
+                    return "text-green-400";
+                case "needs-improvement":
+                    return "text-orange-400";
+                case "poor":
+                    return "text-red-400";
+                default:
+                    return "text-gray-500";
+            }
+        }
+
+        function updateMetric(id: string, value: number, rating: string) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerText = value.toString();
+                el.className = `font-bold ${getRatingColor(rating as any)}`;
+            }
+        }
+
+        onLCP((metric) => {
+            updateMetric("lcp-val", Math.round(metric.value), metric.rating);
+        });
+
+        onCLS((metric) => {
+            updateMetric(
+                "cls-val",
+                parseFloat(metric.value.toFixed(3)),
+                metric.rating,
+            );
+        });
+
+        onINP((metric) => {
+            updateMetric("inp-val", Math.round(metric.value), metric.rating);
+        });
+    }
+</script>

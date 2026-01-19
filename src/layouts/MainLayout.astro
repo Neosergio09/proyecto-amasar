@@ -1,185 +1,323 @@
 ---
-  import SEO from '../components/SEO.astro';
-  import '../styles/global.css'; 
-  import { ClientRouter } from 'astro:transitions';
+import SEO from "../components/SEO.astro";
+import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import PerformanceMonitor from "../components/dev/PerformanceMonitor.astro";
+import { Image } from "astro:assets";
+import "@fontsource/inter";
+import "@fontsource/playfair-display";
 
-  interface Props {
-    title: string;
-    description: string;
-  }
+interface Props {
+  title: string;
+  description: string;
+}
 
-  const { title, description } = Astro.props;
+const { title, description } = Astro.props;
 ---
 
-  <!doctype html>
-  <html lang="es" class="scroll-smooth">
-    <head>
-      <SEO title={title} description={description} />
-      
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link 
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:ital,wght@0,400;0,900;1,400&display=swap" 
-        rel="stylesheet"
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <SEO title={title} description={description} />
+
+    <ClientRouter />
+
+    <slot name="head" />
+  </head>
+
+  <body
+    class="bg-background text-secondary antialiased selection:bg-primary selection:text-white min-h-screen flex flex-col"
+  >
+    <header
+      class="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-primary/10"
+    >
+      <nav
+        class="max-w-7xl mx-auto px-6 h-20 md:h-24 flex items-center justify-between"
+        aria-label="Navegación principal"
       >
-      
-      <ClientRouter />
-      
-      <slot name="head" /> 
-    </head>
-    
-    <body class="bg-background text-secondary antialiased selection:bg-primary selection:text-white min-h-screen flex flex-col">
-      
-      <header class="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-primary/10">
-        <nav class="max-w-7xl mx-auto px-6 h-20 md:h-24 flex items-center justify-between" aria-label="Navegación principal">
-          
-          <div class="relative group flex items-center h-full shrink-0">
-            <img 
-              src="/favicon.svg" 
-              alt="Logotipo de Amasar" 
-              class="w-12 h-12 md:w-70 md:h-70 transition-transform duration-700 ease-in-out lg:group-hover:rotate-[360deg] lg:group-hover:scale-110 pointer-events-none" 
-            />
-            
-            <a 
-              href="/" 
-              class="absolute inset-0 z-10" 
-              aria-label="Amasar - Volver al Inicio"
-            ></a>
-          </div>
-          
-          <div class="hidden lg:flex items-center gap-10">
-            <ul class="flex items-center gap-8 font-bold text-[11px] uppercase tracking-[0.2em] text-secondary">
-              
-              <li class="relative group">
-                <a href="/productos" class="hover:text-primary transition-colors flex items-center gap-1 py-8" aria-haspopup="true">
-                  Productos
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 group-hover:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </a>
-                
-                <ul class="absolute top-full -left-4 w-64 bg-white shadow-2xl rounded-3xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 border border-primary/5 translate-y-2 group-hover:translate-y-0" role="menu">
-                  <li role="none">
-                    <a href="/productos/galletas" class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors" role="menuitem">
-                      <span class="text-xl">🍪</span>
-                      <div class="flex flex-col">
-                          <span class="normal-case tracking-normal text-sm font-bold text-secondary">Galletas</span>
-                          <span class="normal-case tracking-normal text-[10px] text-slate-500 font-medium">Artesanales y decoradas</span>
-                      </div>
-                    </a>
-                  </li>
-                  <li role="none">
-                    <a href="/productos/cafe" class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors" role="menuitem">
-                      <span class="text-xl">☕</span>
-                      <div class="flex flex-col">
-                          <span class="normal-case tracking-normal text-sm font-bold text-secondary">Café de Origen</span>
-                          <span class="normal-case tracking-normal text-[10px] text-slate-500 font-medium">Tostión artesanal</span>
-                      </div>
-                    </a>
-                  </li>
-                  <li role="none">
-                    <a href="/productos/chocolateria" class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors" role="menuitem">
-                      <span class="text-xl">🍫</span>
-                      <div class="flex flex-col">
-                          <span class="normal-case tracking-normal text-sm font-bold text-secondary">Chocolatería</span>
-                          <span class="normal-case tracking-normal text-[10px] text-slate-500 font-medium">Detalles premium</span>
-                      </div>
-                    </a>
-                  </li>
-                  <li role="none">
-                    <a href="/productos/jugos" class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors" role="menuitem">
-                      <span class="text-xl">🥤</span>
-                      <div class="flex flex-col">
-                          <span class="normal-case tracking-normal text-sm font-bold text-secondary">Concentrados</span>
-                          <span class="normal-case tracking-normal text-[10px] text-slate-500 font-medium">100% fruta natural</span>
-                      </div>
-                    </a>
-                  </li>
-                </ul>
-              </li>
+        <div class="relative group flex items-center h-full shrink-0">
+          <Image
+            src="/favicon.svg"
+            alt="Logotipo de Amasar"
+            width={48}
+            height={48}
+            loading="eager"
+            class="w-12 h-12 md:w-70 md:h-70 transition-transform duration-700 ease-in-out lg:group-hover:rotate-[360deg] lg:group-hover:scale-110 pointer-events-none"
+          />
 
-              <li><a href="/nosotros" class="hover:text-primary transition-colors">Nosotros</a></li>
-              
-              <li>
-                <a href="/rastreo" class="hover:text-primary transition-colors flex items-center gap-2">
-                  <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                  </span>
-                  Rastreo
-                </a>
-              </li>
-              
-              <li><a href="/ayuda" class="hover:text-primary transition-colors">Ayuda</a></li>
-            </ul>
-
-            <div class="h-8 w-[1px] bg-secondary/10 mx-2" aria-hidden="true"></div>
-
-            <a href="/contacto" class="bg-secondary text-white px-8 py-3.5 rounded-full shadow-xl shadow-secondary/10 font-bold text-[10px] uppercase tracking-widest hover:bg-primary hover:shadow-primary/30 transition-all active:scale-95">
-              Hacer Pedido
-            </a>
-          </div>
-
-          <button id="mobileMenuBtn" class="lg:hidden p-2 text-secondary" aria-label="Abrir Menú de navegación">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-            </svg>
-          </button>
-        </nav>
-
-        <div id="mobileMenu" class="hidden lg:hidden bg-white border-b border-slate-100 px-6 py-10 space-y-6">
-          <a href="/productos" class="block font-black text-xs uppercase tracking-widest text-secondary">Productos</a>
-          <a href="/nosotros" class="block font-black text-xs uppercase tracking-widest text-secondary">Nosotros</a>
-          <a href="/rastreo" class="block font-black text-xs uppercase tracking-widest text-green-600">Rastrear Pedido</a>
-          <a href="/contacto" class="block bg-secondary text-white text-center py-4 rounded-2xl font-black text-xs uppercase tracking-widest">Hacer Pedido</a>
+          <a
+            href="/"
+            class="absolute inset-0 z-10"
+            aria-label="Amasar - Volver al Inicio"></a>
         </div>
-      </header>
 
-      <main class="flex-grow">
-        <slot />
-      </main>
+        <div class="hidden lg:flex items-center gap-10">
+          <ul
+            class="flex items-center gap-8 font-bold text-[11px] uppercase tracking-[0.2em] text-secondary"
+          >
+            <li class="relative group">
+              <a
+                href="/productos"
+                class="hover:text-primary transition-colors flex items-center gap-1 py-8"
+                aria-haspopup="true"
+              >
+                Productos
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-3 h-3 group-hover:rotate-180 transition-transform"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="3"
+                    d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </a>
 
-      <footer class="bg-secondary text-white py-20">
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-16">
-          <div class="space-y-6">
-            <img 
-              src="/favicon.svg" 
-              alt="Logo Amasar Blanco" 
-              class="w-16 h-16 brightness-0 invert" 
-            />
-            <p class="text-sm leading-relaxed max-w-xs text-white/90">
-              Pastelería artesanal y café de origen para panaderías, eventos corporativos y celebraciones inolvidables en Bogotá.
-            </p>
-          </div>
-          
-          <div class="flex flex-col justify-center gap-4 italic font-serif text-white border-l border-white/10 pl-10 hidden md:flex">
-              <p class="text-2xl">"Transformamos lo artesanal en momentos memorables."</p>
+              <ul
+                class="absolute top-full -left-4 w-64 bg-white shadow-2xl rounded-3xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 border border-primary/5 translate-y-2 group-hover:translate-y-0"
+                role="menu"
+              >
+                <li role="none">
+                  <a
+                    href="/productos/galletas"
+                    class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors"
+                    role="menuitem"
+                  >
+                    <span class="text-xl">🍪</span>
+                    <div class="flex flex-col">
+                      <span
+                        class="normal-case tracking-normal text-sm font-bold text-secondary"
+                        >Galletas</span
+                      >
+                      <span
+                        class="normal-case tracking-normal text-[10px] text-slate-500 font-medium"
+                        >Artesanales y decoradas</span
+                      >
+                    </div>
+                  </a>
+                </li>
+                <li role="none">
+                  <a
+                    href="/productos/cafe"
+                    class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors"
+                    role="menuitem"
+                  >
+                    <span class="text-xl">☕</span>
+                    <div class="flex flex-col">
+                      <span
+                        class="normal-case tracking-normal text-sm font-bold text-secondary"
+                        >Café de Origen</span
+                      >
+                      <span
+                        class="normal-case tracking-normal text-[10px] text-slate-500 font-medium"
+                        >Tostión artesanal</span
+                      >
+                    </div>
+                  </a>
+                </li>
+                <li role="none">
+                  <a
+                    href="/productos/chocolateria"
+                    class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors"
+                    role="menuitem"
+                  >
+                    <span class="text-xl">🍫</span>
+                    <div class="flex flex-col">
+                      <span
+                        class="normal-case tracking-normal text-sm font-bold text-secondary"
+                        >Chocolatería</span
+                      >
+                      <span
+                        class="normal-case tracking-normal text-[10px] text-slate-500 font-medium"
+                        >Detalles premium</span
+                      >
+                    </div>
+                  </a>
+                </li>
+                <li role="none">
+                  <a
+                    href="/productos/jugos"
+                    class="flex items-center gap-3 p-3 hover:bg-background rounded-xl transition-colors"
+                    role="menuitem"
+                  >
+                    <span class="text-xl">🥤</span>
+                    <div class="flex flex-col">
+                      <span
+                        class="normal-case tracking-normal text-sm font-bold text-secondary"
+                        >Concentrados</span
+                      >
+                      <span
+                        class="normal-case tracking-normal text-[10px] text-slate-500 font-medium"
+                        >100% fruta natural</span
+                      >
+                    </div>
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="/nosotros" class="hover:text-primary transition-colors"
+                >Nosotros</a
+              >
+            </li>
+
+            <li>
+              <a
+                href="/rastreo"
+                class="hover:text-primary transition-colors flex items-center gap-2"
+              >
+                <span class="relative flex h-2 w-2">
+                  <span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+                  ></span>
+                  <span
+                    class="relative inline-flex rounded-full h-2 w-2 bg-green-500"
+                  ></span>
+                </span>
+                Rastreo
+              </a>
+            </li>
+
+            <li>
+              <a href="/ayuda" class="hover:text-primary transition-colors"
+                >Ayuda</a
+              >
+            </li>
+          </ul>
+
+          <div class="h-8 w-[1px] bg-secondary/10 mx-2" aria-hidden="true">
           </div>
 
-          <div class="space-y-4">
-            <p class="font-bold text-white mb-4 uppercase tracking-widest text-[10px]">Atención al Cliente</p>
-            <ul class="text-sm space-y-3 text-white/90">
-              <li class="flex items-center gap-2">📍 Bogotá, Colombia</li>
-              <li class="flex items-center gap-2">✉️ <a href="mailto:hola@amasar.co" class="hover:text-primary transition-colors">hola@amasar.co</a></li>
-              <li class="flex items-center gap-2">📱 +57 300 000 0000</li>
-            </ul>
-          </div>
+          <a
+            href="/contacto"
+            class="bg-secondary text-white px-8 py-3.5 rounded-full shadow-xl shadow-secondary/10 font-bold text-[10px] uppercase tracking-widest hover:bg-primary hover:shadow-primary/30 transition-all active:scale-95"
+          >
+            Hacer Pedido
+          </a>
         </div>
-        
-        <div class="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-white/10 text-center">
-          <div class="text-[10px] uppercase tracking-[0.3em] text-white/70 font-bold">
-            &copy; {new Date().getFullYear()} Amasar S.A.S. — Una experiencia diseñada por Otterock
-          </div>
-        </div>
-      </footer>
 
-      <script>
-          function initNav() {
-              const btn = document.getElementById('mobileMenuBtn');
-              const menu = document.getElementById('mobileMenu');
-              btn?.addEventListener('click', () => menu?.classList.toggle('hidden'));
-          }
-          document.addEventListener('astro:page-load', initNav);
-      </script>
-    </body>
-  </html>
+        <button
+          id="mobileMenuBtn"
+          class="lg:hidden p-2 text-secondary"
+          aria-label="Abrir Menú de navegación"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-8 h-8"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 8h16M4 16h16"></path>
+          </svg>
+        </button>
+      </nav>
+
+      <div
+        id="mobileMenu"
+        class="hidden lg:hidden bg-white border-b border-slate-100 px-6 py-10 space-y-6"
+      >
+        <a
+          href="/productos"
+          class="block font-black text-xs uppercase tracking-widest text-secondary"
+          >Productos</a
+        >
+        <a
+          href="/nosotros"
+          class="block font-black text-xs uppercase tracking-widest text-secondary"
+          >Nosotros</a
+        >
+        <a
+          href="/rastreo"
+          class="block font-black text-xs uppercase tracking-widest text-green-600"
+          >Rastrear Pedido</a
+        >
+        <a
+          href="/contacto"
+          class="block bg-secondary text-white text-center py-4 rounded-2xl font-black text-xs uppercase tracking-widest"
+          >Hacer Pedido</a
+        >
+      </div>
+    </header>
+
+    <main class="flex-grow">
+      <slot />
+    </main>
+
+    <footer class="bg-secondary text-white py-20">
+      <div
+        class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-16"
+      >
+        <div class="space-y-6">
+          <Image
+            src="/favicon.svg"
+            alt="Logo Amasar Blanco"
+            width={64}
+            height={64}
+            class="w-16 h-16 brightness-0 invert"
+          />
+          <p class="text-sm leading-relaxed max-w-xs text-white/90">
+            Pastelería artesanal y café de origen para panaderías, eventos
+            corporativos y celebraciones inolvidables en Bogotá.
+          </p>
+        </div>
+
+        <div
+          class="flex flex-col justify-center gap-4 italic font-serif text-white border-l border-white/10 pl-10 hidden md:flex"
+        >
+          <p class="text-2xl">
+            "Transformamos lo artesanal en momentos memorables."
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <p
+            class="font-bold text-white mb-4 uppercase tracking-widest text-[10px]"
+          >
+            Atención al Cliente
+          </p>
+          <ul class="text-sm space-y-3 text-white/90">
+            <li class="flex items-center gap-2">📍 Bogotá, Colombia</li>
+            <li class="flex items-center gap-2">
+              ✉️ <a
+                href="mailto:hola@amasar.co"
+                class="hover:text-primary transition-colors">hola@amasar.co</a
+              >
+            </li>
+            <li class="flex items-center gap-2">📱 +57 300 000 0000</li>
+          </ul>
+        </div>
+      </div>
+
+      <div
+        class="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-white/10 text-center"
+      >
+        <div
+          class="text-[10px] uppercase tracking-[0.3em] text-white/70 font-bold"
+        >
+          &copy; {new Date().getFullYear()} Amasar S.A.S. — Una experiencia diseñada
+          por Otterock
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      function initNav() {
+        const btn = document.getElementById("mobileMenuBtn");
+        const menu = document.getElementById("mobileMenu");
+        btn?.addEventListener("click", () => menu?.classList.toggle("hidden"));
+      }
+      document.addEventListener("astro:page-load", initNav);
+    </script>
+    {import.meta.env.DEV && <PerformanceMonitor />}
+  </body>
+</html>
