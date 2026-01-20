@@ -1,6 +1,6 @@
 ---
-import MainLayout from '../../layouts/MainLayout.astro';
-import { supabase } from '../../lib/supabase';
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { supabase } from "../../lib/supabase";
 
 // 1. SSR ACTIVO: Crucial para ver cambios en tiempo real
 export const prerender = false;
@@ -9,159 +9,189 @@ const title = "Gestión de Pedidos y Rastreo | Amasar";
 
 // Traemos los pedidos frescos de la base de datos
 const { data: pedidos, error } = await supabase
-  .from('pedidos')
-  .select('*')
-  .order('creado_en', { ascending: false });
+  .from("pedidos")
+  .select("*")
+  .order("creado_en", { ascending: false });
 
 if (error) console.error("Error cargando pedidos:", error.message);
 
-const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "Entregado"];
+const estadosLogistica = [
+  "Preparación",
+  "En horno",
+  "Empacado",
+  "En camino",
+  "Entregado",
+];
 ---
 
-<MainLayout title={title} description="Administrador logístico de Amasar SIA SAS.">
-  <div class="min-h-screen bg-slate-50 flex">
-    
-    <aside class="w-64 bg-white border-r border-slate-200 hidden md:block">
-      <div class="p-8">
-        <span class="font-serif text-2xl font-black text-secondary">AMASAR<span class="text-primary">.</span></span>
-      </div>
-      <nav class="mt-4 px-4 space-y-2">
-        <a href="/admin/dashboard" class="flex items-center gap-3 p-4 text-slate-400 hover:bg-slate-50 rounded-2xl font-bold text-sm transition-all">📊 Escritorio</a>
-        <a href="/admin/productos" class="flex items-center gap-3 p-4 text-slate-400 hover:bg-slate-50 rounded-2xl font-bold text-sm transition-all">🍪 Productos</a>
-        <a href="/admin/pedidos" class="flex items-center gap-3 p-4 bg-primary/10 text-primary rounded-2xl font-bold text-sm">🚚 Pedidos</a>
-        <button id="logoutBtn" class="w-full flex items-center gap-3 p-4 text-red-400 hover:bg-red-50 rounded-2xl font-bold text-sm transition-all mt-20">🚪 Cerrar Sesión</button>
-      </nav>
-    </aside>
-
-    <main class="flex-grow p-8 md:p-12">
-      <header class="mb-12">
-        <h1 class="text-4xl font-serif text-secondary mb-2 text-balance">Gestión de <span class="text-primary italic">Despachos</span></h1>
-        <p class="text-slate-500 text-sm">Actualiza el progreso de tus órdenes de forma segura y rastreable.</p>
-      </header>
-
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
-        
-        <div class="lg:col-span-1">
-          <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 sticky top-32">
-            <h2 class="text-lg font-bold text-secondary mb-6">Nuevo Despacho</h2>
-            <form id="orderForm" class="space-y-4">
-              <div>
-                <label class="block text-[10px] uppercase font-black text-slate-400 mb-2 tracking-widest">Panadería / Cliente</label>
-                <input type="text" name="cliente" required class="w-full p-4 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary transition-all" placeholder="Ej: Masa Madre Bog" />
-              </div>
-
-              <div>
-                <label class="block text-[10px] uppercase font-black text-slate-400 mb-2 tracking-widest">Estado de Inicio</label>
-                <select name="estado" class="w-full p-4 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary">
-                  {estadosLogistica.map(est => <option value={est}>{est}</option>)}
-                </select>
-              </div>
-
-              <button type="submit" class="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-primary transition-all shadow-lg active:scale-95">
-                Generar Orden
-              </button>
-            </form>
+<AdminLayout title={title}>
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
+    <div class="lg:col-span-1">
+      <div
+        class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 sticky top-32"
+      >
+        <h2 class="text-lg font-bold text-secondary mb-6">Nuevo Despacho</h2>
+        <form id="orderForm" class="space-y-4">
+          <div>
+            <label
+              class="block text-[10px] uppercase font-black text-slate-400 mb-2 tracking-widest"
+              >Panadería / Cliente</label
+            >
+            <input
+              type="text"
+              name="cliente"
+              required
+              class="w-full p-4 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary transition-all"
+              placeholder="Ej: Masa Madre Bog"
+            />
           </div>
-        </div>
 
-        <div class="lg:col-span-3">
-          <div class="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-400">
-                  <th class="px-8 py-5">Código (Tag)</th>
-                  <th class="px-8 py-5">Panadería</th>
-                  <th class="px-8 py-5">Estado</th>
-                  <th class="px-8 py-5 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-50">
-                {pedidos?.map((ped) => (
-                  <tr class="hover:bg-slate-50/50 transition-colors">
-                    <td class="px-8 py-6 font-black text-primary text-xs tracking-tighter">{ped.tag_rastreo}</td>
-                    <td class="px-8 py-6">
-                       <p class="font-bold text-secondary text-sm">{ped.cliente_nombre}</p>
-                       <p class="text-[9px] text-slate-400 uppercase tracking-widest">Bogotá, Colombia</p>
-                    </td>
-                    <td class="px-8 py-6">
-                      <div class="flex items-center gap-2">
-                        <select 
-                          class="status-select bg-slate-100 text-[10px] font-black uppercase px-4 py-2 rounded-xl border-none outline-none focus:ring-2 focus:ring-primary transition-all cursor-pointer"
-                        >
-                          {estadosLogistica.map(est => (
-                            <option value={est} selected={est === ped.estado}>{est}</option>
-                          ))}
-                        </select>
-                        <button 
-                          class="update-btn p-2 bg-secondary text-white rounded-xl hover:bg-primary transition-all active:scale-90 text-[10px] font-bold uppercase shadow-md shadow-secondary/10"
-                          data-id={ped.id}
-                        >
-                          Guardar
-                        </button>
-                      </div>
-                    </td>
-                    <td class="px-8 py-6 text-center">
-                      <button class="delete-order text-red-200 hover:text-red-500 transition-colors p-2" data-id={ped.id}>
-                        🗑️
+          <div>
+            <label
+              class="block text-[10px] uppercase font-black text-slate-400 mb-2 tracking-widest"
+              >Estado de Inicio</label
+            >
+            <select
+              name="estado"
+              class="w-full p-4 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary"
+            >
+              {
+                estadosLogistica.map((est) => (
+                  <option value={est}>{est}</option>
+                ))
+              }
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-primary transition-all shadow-lg active:scale-95"
+          >
+            Generar Orden
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="lg:col-span-3">
+      <div
+        class="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden"
+      >
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr
+              class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-400"
+            >
+              <th class="px-8 py-5">Código (Tag)</th>
+              <th class="px-8 py-5">Panadería</th>
+              <th class="px-8 py-5">Estado</th>
+              <th class="px-8 py-5 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-50">
+            {
+              pedidos?.map((ped) => (
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                  <td class="px-8 py-6 font-black text-primary text-xs tracking-tighter">
+                    {ped.tag_rastreo}
+                  </td>
+                  <td class="px-8 py-6">
+                    <p class="font-bold text-secondary text-sm">
+                      {ped.cliente_nombre}
+                    </p>
+                    <p class="text-[9px] text-slate-400 uppercase tracking-widest">
+                      Bogotá, Colombia
+                    </p>
+                  </td>
+                  <td class="px-8 py-6">
+                    <div class="flex items-center gap-2">
+                      <select class="status-select bg-slate-100 text-[10px] font-black uppercase px-4 py-2 rounded-xl border-none outline-none focus:ring-2 focus:ring-primary transition-all cursor-pointer">
+                        {estadosLogistica.map((est) => (
+                          <option value={est} selected={est === ped.estado}>
+                            {est}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        class="update-btn p-2 bg-secondary text-white rounded-xl hover:bg-primary transition-all active:scale-90 text-[10px] font-bold uppercase shadow-md shadow-secondary/10"
+                        data-id={ped.id}
+                      >
+                        Guardar
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                    </div>
+                  </td>
+                  <td class="px-8 py-6 text-center">
+                    <button
+                      class="delete-order text-red-200 hover:text-red-500 transition-colors p-2"
+                      data-id={ped.id}
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
       </div>
-    </main>
+    </div>
   </div>
-</MainLayout>
+</AdminLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase';
+  import { supabase } from "../../lib/supabase";
 
   const initOrders = () => {
     console.log("🔍 [TRAZA 1]: Script de Pedidos inicializado correctamente.");
 
-    const form = document.getElementById('orderForm') as HTMLFormElement;
+    const form = document.getElementById("orderForm") as HTMLFormElement;
 
     // 1. Lógica para Crear Pedido
-    form?.addEventListener('submit', async (e) => {
+    form?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
-      
+
       const year = 2026;
       const randomId = Math.floor(1000 + Math.random() * 9000);
       const generatedTag = `AM-${year}-${randomId}`;
 
-      const { error } = await supabase.from('pedidos').insert([{
-        tag_rastreo: generatedTag,
-        cliente_nombre: formData.get('cliente'),
-        estado: formData.get('estado'),
-        creado_en: new Date().toISOString()
-      }]);
+      const { error } = await supabase.from("pedidos").insert([
+        {
+          tag_rastreo: generatedTag,
+          cliente_nombre: formData.get("cliente"),
+          estado: formData.get("estado"),
+          creado_en: new Date().toISOString(),
+        },
+      ]);
 
       if (error) alert("Error al crear orden: " + error.message);
       else window.location.reload();
     });
 
     // 2. LÓGICA DE ACTUALIZACIÓN CON TRAZABILIDAD
-    const updateButtons = document.querySelectorAll('.update-btn');
-    console.log(`🔍 [TRAZA 2]: Se encontraron ${updateButtons.length} botones de actualización.`);
+    const updateButtons = document.querySelectorAll(".update-btn");
+    console.log(
+      `🔍 [TRAZA 2]: Se encontraron ${updateButtons.length} botones de actualización.`,
+    );
 
-    updateButtons.forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+    updateButtons.forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
         const button = e.currentTarget as HTMLButtonElement;
-        const id = button.getAttribute('data-id');
+        const id = button.getAttribute("data-id");
         console.log("🔍 [TRAZA 3]: Botón clickeado. ID del pedido:", id);
-        
+
         // Localizamos el selector de la misma fila
-        const row = button.closest('tr');
-        const select = row?.querySelector('.status-select') as HTMLSelectElement;
+        const row = button.closest("tr");
+        const select = row?.querySelector(
+          ".status-select",
+        ) as HTMLSelectElement;
         const nuevoEstado = select.value;
         console.log("🔍 [TRAZA 4]: Nuevo estado capturado:", nuevoEstado);
 
         if (!id || !nuevoEstado) {
-          console.error("❌ [ERROR]: No se pudo obtener el ID o el Estado del DOM.");
+          console.error(
+            "❌ [ERROR]: No se pudo obtener el ID o el Estado del DOM.",
+          );
           return;
         }
 
@@ -172,9 +202,9 @@ const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "
         console.log("🔍 [TRAZA 5]: Enviando actualización a Supabase...");
 
         const { data, error, status } = await supabase
-          .from('pedidos')
+          .from("pedidos")
           .update({ estado: nuevoEstado })
-          .eq('id', id)
+          .eq("id", id)
           .select(); // El .select() ayuda a confirmar que el cambio ocurrió
 
         if (error) {
@@ -183,15 +213,20 @@ const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "
           button.innerText = "Guardar";
           button.disabled = false;
         } else {
-          console.log("✅ [TRAZA 7]: ¡Éxito! Respuesta de la DB:", data, "Status:", status);
-          
+          console.log(
+            "✅ [TRAZA 7]: ¡Éxito! Respuesta de la DB:",
+            data,
+            "Status:",
+            status,
+          );
+
           // Animación de éxito
           button.innerText = "¡OK!";
-          button.classList.replace('bg-secondary', 'bg-green-500');
-          
+          button.classList.replace("bg-secondary", "bg-green-500");
+
           setTimeout(() => {
             button.innerText = "Guardar";
-            button.classList.replace('bg-green-500', 'bg-secondary');
+            button.classList.replace("bg-green-500", "bg-secondary");
             button.disabled = false;
           }, 1500);
         }
@@ -199,11 +234,14 @@ const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "
     });
 
     // 3. Borrar Pedidos
-    document.querySelectorAll('.delete-order').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-id');
+    document.querySelectorAll(".delete-order").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-id");
         if (confirm("¿Seguro que quieres borrar este pedido?")) {
-          const { error } = await supabase.from('pedidos').delete().eq('id', id);
+          const { error } = await supabase
+            .from("pedidos")
+            .delete()
+            .eq("id", id);
           if (error) alert("Error al borrar");
           else window.location.reload();
         }
@@ -212,5 +250,5 @@ const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "
   };
 
   // Re-inicializar en cada navegación de Astro
-  document.addEventListener('astro:page-load', initOrders);
+  document.addEventListener("astro:page-load", initOrders);
 </script>

@@ -6,13 +6,14 @@ import type { Product } from "../../types/database";
 
 // Auth & Data Fetching (SSR)
 const supabase = await getSupabaseServer(Astro.cookies);
-const {
-  data: { session },
-} = await supabase.auth.getSession();
+// Auth handled by middleware
+// const {
+//   data: { session },
+// } = await supabase.auth.getSession();
 
-if (!session) {
-  return Astro.redirect("/admin/login");
-}
+// if (!session) {
+//   return Astro.redirect("/admin/login");
+// }
 
 let productos = [];
 let errorMsg = null;
@@ -38,7 +39,7 @@ try {
 }
 ---
 
-<AdminLayout>
+<AdminLayout title="Gestión de Productos">
   <div class="mb-8 flex justify-between items-center">
     <div>
       <h1 class="text-3xl font-serif text-secondary mb-2">Inventario</h1>
@@ -46,11 +47,12 @@ try {
         Gestiona el stock y precios de tus productos en tiempo real.
       </p>
     </div>
-    <button
-      class="bg-primary text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-primary/20 hover:bg-orange-600 transition-colors text-sm"
+    <a
+      href="/admin/productos/nuevo"
+      class="bg-primary text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-primary/20 hover:bg-orange-600 transition-colors text-sm flex items-center gap-2"
     >
-      + Nuevo Producto
-    </button>
+      <span>+ Nuevo Producto</span>
+    </a>
   </div>
 
   <div
@@ -329,4 +331,15 @@ try {
       if (e.key === "Enter") (e.target as HTMLInputElement).blur();
     });
   });
+
+  // Check for success param from redirect
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("success") === "true") {
+    const toastText = document.querySelector("#toast span");
+    if (toastText) toastText.textContent = "¡Producto creado con éxito!";
+    showToast();
+
+    // Clean URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
 </script>
