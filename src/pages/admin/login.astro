@@ -1,44 +1,81 @@
 ---
-import MainLayout from '../../layouts/MainLayout.astro';
+import MainLayout from "../../layouts/MainLayout.astro";
 
 const title = "Acceso Administrativo | Amasar";
-const description = "Panel de control privado para la gestión de Amasar SIA SAS.";
+const description =
+  "Panel de control privado para la gestión de Amasar SIA SAS.";
 ---
 
 <MainLayout title={title} description={description}>
-  <section class="min-h-[80vh] flex items-center justify-center bg-background py-20">
+  <section
+    class="min-h-[80vh] flex items-center justify-center bg-background py-20"
+  >
     <div class="max-w-md w-full px-6">
-      
       <div class="text-center mb-10">
-        <div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl mx-auto mb-6">A</div>
-        <h1 class="text-4xl font-serif text-secondary mb-2">Panel de Control</h1>
-        <p class="text-slate-500 text-sm italic">"Solo personal autorizado de Amasar"</p>
+        <div
+          class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl mx-auto mb-6"
+        >
+          A
+        </div>
+        <h1 class="text-4xl font-serif text-secondary mb-2">
+          Panel de Control
+        </h1>
+        <p class="text-slate-500 text-sm italic">
+          "Solo personal autorizado de Amasar"
+        </p>
       </div>
 
-      <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-primary/5">
+      <div
+        class="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-primary/5"
+      >
         <form id="loginForm" class="space-y-6">
           <div>
-            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Correo Electrónico</label>
-            <input type="email" id="email" required class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all" />
+            <label
+              class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2"
+              >Correo Electrónico</label
+            >
+            <input
+              type="email"
+              id="email"
+              required
+              class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all"
+            />
           </div>
 
           <div>
-            <label class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Contraseña</label>
-            <input type="password" id="password" required class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all" />
+            <label
+              class="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2"
+              >Contraseña</label
+            >
+            <input
+              type="password"
+              id="password"
+              required
+              class="w-full p-4 rounded-xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all"
+            />
           </div>
 
-          <button type="submit" class="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-primary transition-all active:scale-95 shadow-lg">
+          <button
+            type="submit"
+            class="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-primary transition-all active:scale-95 shadow-lg"
+          >
             Entrar al Sistema
           </button>
         </form>
-        
-        <p id="errorMessage" class="hidden mt-6 text-center text-xs text-red-500 font-bold bg-red-50 p-4 rounded-xl border border-red-100 animate-shake">
+
+        <p
+          id="errorMessage"
+          class="hidden mt-6 text-center text-xs text-red-500 font-bold bg-red-50 p-4 rounded-xl border border-red-100 animate-shake"
+        >
           Credenciales incorrectas. Intenta de nuevo.
         </p>
       </div>
 
       <div class="mt-8 text-center">
-        <a href="/" class="text-[10px] uppercase tracking-widest text-slate-400 hover:text-primary transition-colors font-bold">
+        <a
+          href="/"
+          class="text-[10px] uppercase tracking-widest text-slate-400 hover:text-primary transition-colors font-bold"
+        >
           ← Volver a la página pública
         </a>
       </div>
@@ -47,15 +84,16 @@ const description = "Panel de control privado para la gestión de Amasar SIA SAS
 </MainLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase';
+  import { supabase } from "../../lib/supabase";
 
-  const loginForm = document.getElementById('loginForm') as HTMLFormElement;
-  const errorMsg = document.getElementById('errorMessage');
+  const loginForm = document.getElementById("loginForm") as HTMLFormElement;
+  const errorMsg = document.getElementById("errorMessage");
 
-  loginForm?.addEventListener('submit', async (e) => {
+  loginForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = (document.getElementById('email') as HTMLInputElement).value;
-    const password = (document.getElementById('password') as HTMLInputElement).value;
+    const email = (document.getElementById("email") as HTMLInputElement).value;
+    const password = (document.getElementById("password") as HTMLInputElement)
+      .value;
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -63,11 +101,18 @@ const description = "Panel de control privado para la gestión de Amasar SIA SAS
     });
 
     if (error) {
-      errorMsg?.classList.remove('hidden');
+      errorMsg?.classList.remove("hidden");
       console.error("Error de login:", error.message);
     } else {
+      // Set cookies for Server-Side Rendering (SSR) awareness
+      const { access_token, refresh_token } = data.session;
+      const maxAge = 60 * 60 * 24 * 7; // 1 week
+
+      document.cookie = `sb-access-token=${access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+      document.cookie = `sb-refresh-token=${refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+
       // Si el login es exitoso, enviamos al usuario al escritorio principal
-      window.location.href = '/admin/dashboard';
+      window.location.href = "/admin/dashboard";
     }
   });
 </script>
