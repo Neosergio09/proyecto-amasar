@@ -17,18 +17,29 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  */
 export function getOptimizedImage(url: string | null, width = 800) {
   // 1. Manejo de nulos o strings vacíos
-  if (!url) return '/placeholder.jpg';
+  if (!url) return 'https://placehold.co/200x200/f3f4f6/1e293b?text=Amasar';
 
-  // 2. Si es una imagen de Supabase, aplicamos transformación al vuelo
+  let finalUrl = url;
+
+  // 2. Si es solo un nombre de archivo (no es URL completa), asumimos bucket 'productos'
+  if (!finalUrl.includes('http') && !finalUrl.includes('://')) {
+    if (!finalUrl.startsWith('productos/')) {
+      finalUrl = `productos/${finalUrl}`;
+    }
+    // Construimos la URL completa pública
+    finalUrl = `${supabaseUrl}/storage/v1/object/public/${finalUrl}`;
+  }
+
+  // 3. Si es una imagen de Supabase, aplicamos transformación al vuelo
   // Redimensionamos, bajamos calidad al 80% y forzamos formato WebP (más ligero)
-  if (url.includes('supabase.co')) {
+  if (finalUrl.includes('supabase.co')) {
     // Limpiamos la URL de parámetros previos si existen
-    const cleanUrl = url.split('?')[0];
+    const cleanUrl = finalUrl.split('?')[0];
     return `${cleanUrl}?width=${width}&quality=80&format=webp`;
   }
 
-  // 3. Si es una imagen externa o local, se devuelve tal cual
-  return url;
+  // 4. Si es una imagen externa diferente, se devuelve tal cual
+  return finalUrl;
 }
 
 /**

@@ -3,16 +3,17 @@ import { defineMiddleware } from "astro:middleware";
 export const onRequest = defineMiddleware(async (context, next) => {
     const { url, cookies, redirect } = context;
 
-    // 1. Define Protected Routes (All /admin routes except login)
-    if (url.pathname.startsWith("/admin") && !url.pathname.startsWith("/admin/login")) {
+    // 1. Define Protected Routes (Strict Check)
+    const isProtected = (url.pathname.startsWith("/admin") || url.pathname.startsWith("/vendedores"));
+    const isLogin = url.pathname.startsWith("/admin/login") || url.pathname.startsWith("/vendedores/login");
+
+    if (isProtected && !isLogin) {
 
         // 2. Check for Supabase Session Tokens in Cookies
         const accessToken = cookies.get("sb-access-token")?.value;
         const refreshToken = cookies.get("sb-refresh-token")?.value;
 
-        // 3. Simple Client-Side Token Check (Improvement: Validate with Supabase Client if strict security needed)
-        // For now, presence of tokens is enough to pass the middleware, 
-        // real data fetching will fail RLS if tokens are invalid.
+        // 3. Simple Client-Side Token Check
         if (!accessToken || !refreshToken) {
             return redirect("/admin/login");
         }

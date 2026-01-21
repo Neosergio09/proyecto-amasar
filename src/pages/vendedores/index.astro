@@ -1,0 +1,322 @@
+---
+import VendedorLayout from '../../layouts/VendedorLayout.astro';
+import { getSupabaseServer, getOptimizedImage } from '../../lib/supabase';
+
+// 1. Validación de Sesión y Fetch de Datos
+const supabase = await getSupabaseServer(Astro.cookies);
+
+// 2. Consulta de Productos (Optimizada para la lista móvil)
+// 2. Consulta de Productos (Optimizada para la lista móvil)
+// 2. Consulta de Productos (Completa, sin límites)
+// 2. Consulta de Productos (Optimizada para la lista móvil)
+const { data: rawProductos, error } = await supabase
+  .from('productos')
+  .select('id, nombre, precio, imagen_url, stock_cantidad, categoria')
+  .order('nombre');
+
+if (error) {
+  console.error("Error cargando productos:", error);
+}
+
+// Validación de Datos en Fetch: Filtra productos corruptos pero MANTIENE los que no tienen categoría
+// Se asigna 'Varios' a los que no tienen categoría para que no queden huérfanos en los filtros
+const productos = (rawProductos || [])
+    .filter(p => p.nombre && p.precio != null)
+    .map(p => ({
+        ...p,
+        categoria: p.categoria || 'Varios' 
+    }));
+
+// Extracción de categorías únicas para los filtros (incluyendo 'Varios')
+const categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean).sort();
+---
+
+<VendedorLayout title="Amasar Go">
+  
+  <!-- Encabezado Fijo -->
+  <header class="fixed top-0 left-0 right-0 bg-white z-50 shadow-sm border-b border-gray-100 px-4 py-3">
+    <div class="flex items-center justify-between mb-3">
+      <h1 class="text-xl font-bold tracking-tight text-gray-800">Amasar Go 🚀</h1>
+      <span class="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full">En Línea</span>
+    </div>
+
+    <!-- Buscador -->
+    <div class="relative">
+      <input 
+        type="search" 
+        id="searchInput" 
+        placeholder="Buscar productos..." 
+        class="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-none rounded-xl text-base focus:ring-2 focus:ring-blue-500 transition-shadow outline-none placeholder-gray-400"
+      />
+      <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+    </div>
+
+    <!-- Filtros de Categoría (Scroll Horizontal) -->
+    <div class="flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4 scroll-smooth">
+      <button class="filter-btn active whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium bg-gray-900 text-white shadow-md transition-all scale-100" data-cat="todas">
+        Todas
+      </button>
+      {categorias.map(cat => (
+        <button class="filter-btn whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all active:scale-95" data-cat={cat}>
+          {cat}
+        </button>
+      ))}
+    </div>
+  </header>
+
+  <!-- Espaciador para el header fijo (aprox 130px) -->
+  <div class="h-[140px]"></div>
+
+  <!-- Lista de Productos -->
+  <main class="px-4 pb-4 space-y-3">
+    {productos.map(prod => {
+      // Blindaje de datos: Fallbacks para nulls
+      const stock = prod.stock_cantidad ?? 0;
+      const precio = prod.precio ?? 0;
+      const sinStock = stock === 0;
+
+      return (
+        <article 
+          class={`product-card flex items-center p-3 bg-white rounded-2xl shadow-sm border border-gray-100 transition-opacity ${sinStock ? 'opacity-60 grayscale' : ''}`}
+          data-nombre={(prod.nombre || '').toLowerCase()}
+          data-cat={prod.categoria}
+          data-id={prod.id}
+          data-price={precio}
+          data-stock={stock}
+        >
+          <!-- Miniatura -->
+          <div class="flex-shrink-0 mr-4">
+            {/* Log de verificación */}
+            {console.log("Cargando imagen:", getOptimizedImage(prod.imagen_url, 200))}
+            <img 
+              src={getOptimizedImage(prod.imagen_url, 200)} 
+              alt={prod.nombre ?? 'Producto'} 
+              class="w-16 h-16 rounded-full object-cover bg-slate-100 border border-gray-200"
+              loading="lazy"
+              width="64"
+              height="64"
+            />
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <h3 class="font-semibold text-gray-900 text-base leading-tight truncate">{prod.nombre ?? 'Sin nombre'}</h3>
+            <div class="flex items-center mt-1">
+              <span class="text-gray-900 font-bold">${precio.toLocaleString('es-CO')}</span>
+              {sinStock && <span class="ml-2 text-[10px] font-bold uppercase tracking-wider text-red-500 bg-red-50 px-1.5 rounded">No disponible</span>}
+            </div>
+            <div class="text-xs text-gray-400 mt-0.5">Stock: {stock}</div>
+          </div>
+
+          <!-- Selector de Cantidad -->
+          <div class="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200">
+            <button 
+              class="qty-btn w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 active:scale-90 transition-transform disabled:opacity-50"
+              data-action="decrease"
+              disabled
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+              </svg>
+            </button>
+            
+            <span class="w-8 text-center font-bold text-gray-900 text-lg tabular-nums qty-display">0</span>
+
+            <button 
+              class="qty-btn w-8 h-8 flex items-center justify-center bg-blue-600 rounded-md shadow-sm text-white active:scale-90 transition-transform disabled:opacity-50 disabled:bg-gray-400"
+              data-action="increase"
+              disabled={sinStock}
+            >
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+            </button>
+          </div>
+        </article>
+      );
+    })}
+
+    <!-- Estado Vacío -->
+    <div id="emptyState" class={productos.length === 0 ? "text-center py-12" : "hidden text-center py-12"}>
+      <p class="text-gray-500 text-lg">No hay productos disponibles en este momento.</p>
+    </div>
+  </main>
+
+  <!-- Barra de Resumen (Sticky Bottom) -->
+  <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-50 pb-safe">
+    <div class="flex items-center justify-between gap-4 max-w-md mx-auto">
+      <div class="flex flex-col">
+        <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Pedido</span>
+        <span class="text-2xl font-black text-gray-900" id="totalPrice">$0</span>
+      </div>
+      <button 
+        id="checkoutBtn"
+        class="flex-1 bg-blue-600 text-white h-12 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 active:scale-95 transition-all"
+        disabled
+        onclick="window.location.href='/vendedores/confirmar'"
+      >
+        <span>Revisar Pedido</span>
+        <span class="bg-blue-500 text-blue-50 text-xs px-2 py-0.5 rounded-full hidden" id="itemCountBadge">0</span>
+      </button>
+    </div>
+  </div>
+
+<script>
+    // Lógica en Vanilla JS para máximo rendimiento y cero dependencias
+    document.addEventListener('DOMContentLoaded', () => {
+        const productList = document.querySelector('main');
+        const searchInput = document.getElementById('searchInput');
+        const emptyState = document.getElementById('emptyState');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const totalDisplay = document.getElementById('totalPrice');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        const itemCountBadge = document.getElementById('itemCountBadge');
+        
+        // Estado del Carrito (Mapa: id -> cantidad)
+        const cart = new Map();
+
+        // --- 1. Filtrado y Búsqueda ---
+        
+        let currentCategory = 'todas';
+        let currentSearch = '';
+
+        function filterProducts() {
+            let visibleCount = 0;
+            const products = document.querySelectorAll('.product-card');
+
+            products.forEach(el => {
+                const card = el as HTMLElement;
+                // Corrección: Usar dataset.nombre alineado con la DB y con blindaje de nulos
+                const nombre = (card.dataset.nombre || '').toLowerCase();
+                const cat = card.dataset.cat;
+                
+                const matchCat = currentCategory === 'todas' || cat === currentCategory;
+                const matchSearch = nombre.includes(currentSearch);
+
+                if (matchCat && matchSearch) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            if (emptyState) {
+                emptyState.classList.toggle('hidden', visibleCount > 0);
+            }
+        }
+
+        searchInput?.addEventListener('input', (e) => {
+            currentSearch = (e.target as HTMLInputElement).value.toLowerCase();
+            filterProducts();
+        });
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // UI updates
+                filterBtns.forEach(b => {
+                   b.classList.remove('bg-gray-900', 'text-white', 'shadow-md');
+                   b.classList.add('bg-white', 'text-gray-600', 'border', 'border-gray-200');
+                });
+                btn.classList.remove('bg-white', 'text-gray-600', 'border', 'border-gray-200');
+                btn.classList.add('bg-gray-900', 'text-white', 'shadow-md');
+
+                // Logic
+                currentCategory = (btn as HTMLElement).dataset.cat || 'todas';
+                filterProducts();
+            });
+        });
+
+        // --- 2. Lógica del Carrito ---
+
+        function updateCartUI() {
+            // Calcular total
+            let total = 0;
+            let count = 0;
+
+            const products = document.querySelectorAll('.product-card');
+            products.forEach(el => {
+                const card = el as HTMLElement;
+                const id = card.dataset.id;
+                const price = parseInt(card.dataset.price || '0');
+                const qty = cart.get(id) || 0;
+
+                // Actualizar display visual de la fila
+                const qtyDisplay = card.querySelector('.qty-display');
+                if (qtyDisplay) qtyDisplay.textContent = qty.toString();
+
+                const decreaseBtn = card.querySelector('[data-action="decrease"]');
+                if (decreaseBtn) (decreaseBtn as HTMLButtonElement).disabled = (qty === 0);
+
+                total += qty * price;
+                count += qty;
+            });
+
+            // Actualizar Barra Inferior
+            if (totalDisplay) totalDisplay.textContent = `$${total.toLocaleString('es-CO')}`;
+            if (checkoutBtn) (checkoutBtn as HTMLButtonElement).disabled = count === 0;
+            
+            if (itemCountBadge) {
+                itemCountBadge.textContent = count.toString();
+                itemCountBadge.classList.toggle('hidden', count === 0);
+            }
+        }
+
+        // --- 3. Delegación de Eventos para Botones ---
+        productList?.addEventListener('click', (e) => {
+            const target = (e.target as Element).closest('button');
+            if (!target || !target.classList.contains('qty-btn')) return;
+
+            const card = target.closest('.product-card') as HTMLElement;
+            if (!card) return;
+
+            const id = card.dataset.id;
+            const stock = parseInt(card.dataset.stock || '0');
+            const action = target.dataset.action;
+            
+            let currentQty = cart.get(id) || 0;
+
+            if (action === 'increase') {
+                if (currentQty < stock) {
+                    currentQty++;
+                    
+                    // Pequeña animación visual
+                    const display = card.querySelector('.qty-display');
+                    display?.classList.remove('scale-100');
+                    display?.classList.add('scale-125', 'text-blue-600');
+                    setTimeout(() => display?.classList.remove('scale-125', 'text-blue-600'), 150);
+
+                } else {
+                    // Feedback visual de tope alcanzado
+                    target.classList.add('bg-red-100', 'text-red-500');
+                    setTimeout(() => target.classList.remove('bg-red-100', 'text-red-500'), 200);
+                    // Opcional: Toast "Stock máximo alcanzado"
+                }
+            } else if (action === 'decrease') {
+                if (currentQty > 0) {
+                    currentQty--;
+                }
+            }
+
+            cart.set(id, currentQty);
+            updateCartUI();
+        });
+    });
+</script>
+
+<style>
+    /* Ocultar barra de scroll en filtros pero permitir scroll */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 1rem);
+    }
+</style>
+</VendedorLayout>
