@@ -111,8 +111,15 @@ const description =
       document.cookie = `sb-access-token=${access_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
       document.cookie = `sb-refresh-token=${refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
 
-      // Si el login es exitoso, enviamos al usuario al escritorio principal
-      window.location.href = "/admin/dashboard";
+      // Si el login es exitoso, verificamos el rol y redirigimos
+      const { user } = data.session;
+      const role = user?.user_metadata?.role;
+
+      if (role === "vendedor") {
+        window.location.href = "/vendedores";
+      } else {
+        window.location.href = "/admin/dashboard";
+      }
     }
   });
 </script>
