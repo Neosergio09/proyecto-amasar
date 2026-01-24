@@ -194,7 +194,7 @@ try {
 
   const inputs = document.querySelectorAll(".editable-input");
   const toast = document.getElementById("toast");
-  let timeoutId: number;
+  let timeoutId: any;
 
   function showToast() {
     if (!toast) return;
@@ -214,33 +214,52 @@ try {
     let value = input.value;
     const originalValue = input.defaultValue;
 
-    if (!id || !field || value === "") return;
+    // ⛔ Validación de Identidad del Recurso
+    if (!id || !field) {
+      console.error("❌ Security Error: Missing Resource ID or Field Target.");
+      return;
+    }
 
-    // 0. Verify Session
+    // Evitar vacíos
+    if (value === "") return;
+
+    // 🔒 1. Verificación de Sesión Activa (Bank-Grade Check)
     const {
       data: { session },
       error: sessionError,
     } = await supabase.auth.getSession();
+
     if (sessionError || !session) {
-      console.error("❌ Auth Error:", sessionError);
-      alert("Tu sesión ha expirado.");
-      input.value = originalValue;
+      console.error(
+        "⛔ Security Alert: Invalid or Expired Session.",
+        sessionError,
+      );
+      alert(
+        "Su sesión ha expirado por seguridad. Por favor inicie sesión nuevamente.",
+      );
+      // Forzar recarga para redirigir al login vía middleware
+      window.location.reload();
       return;
     }
 
+    // UI Feedback: Cargando...
     input.classList.add("opacity-50", "cursor-wait");
+    const parentRow = input.closest("tr");
+    if (parentRow) parentRow.classList.add("bg-blue-50/50");
 
     try {
       let newValue = value;
       let successMessage = "Cambios guardados correctamente";
 
-      // 1. LOGIC DIVISION: Stock (Additive) vs Others (Absolute)
+      // 🔄 2. Lógica de Stock (Aditiva vs Absoluta)
       if (field === "stock_cantidad") {
         const delta = parseInt(value, 10);
-        if (isNaN(delta))
-          throw new Error("Por favor ingresa un número válido.");
 
-        // A. Fetch current 'fresh' stock
+        if (isNaN(delta)) {
+          throw new Error("Formato inválido: Ingrese un número.");
+        }
+
+        // A. Obtener stock 'fresco' (Concurrency Safe-ish)
         const { data: currentData, error: fetchError } = await supabase
           .from("productos")
           .select("stock_cantidad")
@@ -248,98 +267,106 @@ try {
           .single();
 
         if (fetchError)
-          throw new Error(
-            "Error obteniendo stock actual: " + fetchError.message,
-          );
+          throw new Error(`Error de Sincronización: ${fetchError.message}`);
 
-        // B. Calculate new total
-        const currentStock = currentData.stock_cantidad || 0;
+        // B. Calcular nuevo total
+        const currentStock = currentData?.stock_cantidad ?? 0;
         const newTotal = currentStock + delta;
+
+        // Validación de Negativos
+        if (newTotal < 0) {
+          throw new Error(
+            `Operación rechazada: El stock no puede ser negativo (Actual: ${currentStock}).`,
+          );
+        }
+
         newValue = newTotal.toString();
-
-        console.log(
-          `🧮 Stock Logic: ${currentStock} + (${delta}) = ${newTotal}`,
-        );
-
-        successMessage = `Stock actualizado: ${currentStock} -> ${newTotal} (${delta > 0 ? "+" : ""}${delta})`;
+        successMessage = `Stock actualizado: ${currentStock} ➜ ${newTotal}`;
       }
 
-      // 2. Perform Update
-      // For stock, we update with the calculated total. For others, just the input value.
-      const updateValue = field === "stock_cantidad" ? newValue : value;
+      // 💾 3. Persistencia Segura
+      const updatePayload = {
+        [field]: field === "stock_cantidad" ? newValue : value,
+      };
 
       const { data, error } = await supabase
         .from("productos")
-        .update({ [field]: updateValue })
+        .update(updatePayload)
         .eq("id", id)
-        .select();
+        .select()
+        .single();
 
-      input.classList.remove("opacity-50", "cursor-wait");
+      if (error) {
+        // Logging Detallado para Auditoría
+        console.error(
+          `❌ Database Update Error [ID: ${id}]:`,
+          error.message,
+          error.details,
+        );
+        throw new Error(error.message);
+      }
 
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0)
-        throw new Error("No se pudo actualizar el registro.");
+      // ✅ 4. Actualización UI
+      console.log("✅ Audit: Update success", data);
 
-      // 3. Success Feedback & UI Update
-      console.log("✅ Update success:", data);
-
-      // Custom toast text
       const toastText = document.querySelector("#toast span");
       if (toastText) toastText.textContent = successMessage;
       showToast();
 
-      // Clear input if it was stock (ready for next addition)
       if (field === "stock_cantidad") {
-        input.value = "";
-        // Update the display badge
+        input.value = ""; // Reset input relativo
+        // Actualizar visualizador estático
         const stockDisplay =
           input.parentElement?.querySelector(".stock-display");
-        if (stockDisplay) stockDisplay.textContent = newValue;
-      } else {
-        input.defaultValue = value;
-      }
-
-      // 4. Update Status Badge (En Stock / Agotado) if likely changed
-      if (field === "stock_cantidad") {
-        const newStock = parseInt(newValue);
-        const row = input.closest("tr");
-        const badgeContainer = row?.querySelector("td:last-child span"); // Approximate selector for "Estado" column contents
-
-        // Simple heuristic: reload or smart DOM update.
-        // Ideally we would toggle classes here, but let's trust the user refreshes for major status changes
-        // or we could implement a quick class toggle:
-        if (badgeContainer) {
-          const isStock = newStock > 0;
-          // Reset classes
-          badgeContainer.className = `inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${isStock ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`;
-          badgeContainer.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${isStock ? "bg-green-500" : "bg-red-500"}"></span>${isStock ? "En Stock" : "Agotado"}`;
+        if (stockDisplay) {
+          stockDisplay.textContent = newValue;
+          // Animación
+          stockDisplay.classList.add("bg-green-100", "text-green-800");
+          setTimeout(
+            () =>
+              stockDisplay.classList.remove("bg-green-100", "text-green-800"),
+            1000,
+          );
         }
+
+        // Actualizar Badge de Estado
+        const newStock = parseInt(newValue);
+        const badgeCell = parentRow?.querySelector("td:last-child span");
+        if (badgeCell) {
+          const isStock = newStock > 0;
+          badgeCell.className = `inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${isStock ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`;
+          badgeCell.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${isStock ? "bg-green-500" : "bg-red-500"}"></span>${isStock ? "En Stock" : "Agotado"}`;
+        }
+      } else {
+        input.defaultValue = value; // Update 'clean' state
       }
     } catch (err: any) {
-      console.error("🔥 Error:", err);
-      alert(`Error: ${err.message}`);
+      console.error("🔥 System Error:", err);
+      alert(`No se pudo guardar: ${err.message}`);
+
+      // Rollback visual
       if (field !== "stock_cantidad") input.value = originalValue;
-      else input.value = ""; // Clear stock input on error to avoid confusion? Or keep it?
+      else input.value = "";
+    } finally {
       input.classList.remove("opacity-50", "cursor-wait");
+      if (parentRow) parentRow.classList.remove("bg-blue-50/50");
     }
   }
 
   inputs.forEach((input) => {
-    // Save on blur or Enter key
     input.addEventListener("change", handleUpdate);
-    input.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+    input.addEventListener("keydown", (e: Event) => {
+      if ((e as KeyboardEvent).key === "Enter")
+        (e.target as HTMLInputElement).blur();
     });
   });
 
-  // Check for success param from redirect
+  // Check for success param
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("success") === "true") {
     const toastText = document.querySelector("#toast span");
     if (toastText) toastText.textContent = "¡Producto creado con éxito!";
     showToast();
-
-    // Clean URL
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 </script>
