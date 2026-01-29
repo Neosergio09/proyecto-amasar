@@ -82,9 +82,14 @@ const categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean)
 
     <!-- Nivel 2: Branding y Estado -->
     <div class="flex items-center justify-between mb-5 px-1">
-      <h1 class="text-2xl font-black tracking-tighter text-gray-900">
-        Amasar <span class="text-blue-600">Go</span> 🚀
-      </h1>
+      <div class="flex flex-col">
+        <h1 class="text-2xl font-black tracking-tighter text-gray-900 leading-none">
+          Amasar <span class="text-blue-600">Go</span> 🚀
+        </h1>
+        <span id="customerNameRef" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+             Pedido General
+        </span>
+      </div>
       <div class="flex items-center gap-1.5 px-2.5 py-1 bg-green-100/80 text-green-700 rounded-full border border-green-200 shadow-sm">
         <span class="relative flex h-2 w-2">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -243,10 +248,78 @@ const categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean)
         const checkoutBtn = document.getElementById('checkoutBtn');
         const itemCountBadge = document.getElementById('itemCountBadge');
         const logoutBtn = document.getElementById('logoutBtn');
+        const customerNameRef = document.getElementById('customerNameRef');
         
         // --- State ---
         const cart = new Map();
+
+        // --- 0. Feedback de Éxito (Toast) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('success') === 'order_created') {
+            // Remove param clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+            
+            // Create and append Toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-24 right-5 bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl z-[60] flex items-center gap-3 animate-bounce-in';
+            toast.innerHTML = `
+                <div class="bg-white/20 p-2 rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
+                <div>
+                    <h4 class="font-bold text-lg leading-none">¡Pedido Exitoso!</h4>
+                    <p class="text-xs font-medium text-green-100 mt-1">Inventario actualizado.</p>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Auto dismiss
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.transition = 'all 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+        const activeCustomerJson = localStorage.getItem('active_customer');
+        if (activeCustomerJson) {
+            try {
+                const client = JSON.parse(activeCustomerJson);
+                // Support both new 'nombre_comercial' and old 'nombre' for smooth transition
+                const clientName = client.nombre_comercial || client.nombre;
+                
+                if (customerNameRef && clientName) {
+                    customerNameRef.textContent = `Pedido para: ${clientName}`;
+                    customerNameRef.classList.replace('text-gray-400', 'text-blue-600');
+                }
+            } catch (e) { console.error("Error parsing customer", e); }
+        }
         
+        // --- Checkout Logic (Persistencia) ---
+        checkoutBtn?.addEventListener('click', () => {
+             const cartData: any[] = [];
+             const products = document.querySelectorAll('.product-card');
+             
+             products.forEach(el => {
+                 const card = el as HTMLElement;
+                 const id = card.dataset.id;
+                 const qty = cart.get(id) || 0;
+                 
+                 if (qty > 0) {
+                     cartData.push({
+                         id: id,
+                         name: card.querySelector('h3')?.textContent || card.dataset.nombre,
+                         visualName: card.querySelector('h3')?.textContent || card.dataset.nombre,
+                         price: parseInt(card.dataset.price || '0'),
+                         qty: qty
+                     });
+                 }
+             });
+ 
+             if (cartData.length === 0) return;
+ 
+             localStorage.setItem('cart_data', JSON.stringify(cartData));
+             window.location.href = '/vendedores/confirmar';
+         });
+
         // --- 0. Logout Seguro ---
         logoutBtn?.addEventListener('click', async () => {
              // Feedback visual inmediato
@@ -254,7 +327,8 @@ const categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean)
              
              try {
                 // 1. Limpiar carrito local
-                localStorage.removeItem('cart_backup'); 
+                localStorage.removeItem('cart_data');
+                localStorage.removeItem('active_customer'); 
                 // 2. SignOut Supabase
                 const { error } = await supabase.auth.signOut();
                 if (error) throw error;
@@ -354,7 +428,12 @@ const categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean)
 
             // Barra Inferior
             if (totalDisplay) totalDisplay.textContent = `$${total.toLocaleString('es-CO')}`;
-            if (checkoutBtn) (checkoutBtn as HTMLButtonElement).disabled = count === 0;
+            if (checkoutBtn) {
+                 const btn = checkoutBtn as HTMLButtonElement;
+                 btn.disabled = count === 0;
+                 // Remove onclick to avoid inline redirect
+                 btn.removeAttribute('onclick');
+            }
             
             if (itemCountBadge) {
                 itemCountBadge.textContent = count.toString();

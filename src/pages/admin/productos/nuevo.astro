@@ -164,20 +164,81 @@ const supabaseServer = await getSupabaseServer(Astro.cookies);
                     </div>
 
                     <!-- Image URL -->
+                    <!-- Image Upload -->
                     <div class="space-y-2">
-                        <label
-                            for="imagen_url"
-                            class="text-sm font-bold text-slate-700"
-                            >URL de Imagen</label
+                        <label class="text-sm font-bold text-slate-700"
+                            >Imagen del Producto</label
                         >
-                        <input
-                            type="url"
-                            id="imagen_url"
-                            name="imagen_url"
-                            class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all outline-none text-slate-700"
-                            placeholder="https://..."
-                            aria-label="URL de la Imagen"
-                        />
+
+                        <!-- File Input styled as button/zone -->
+                        <div class="relative">
+                            <input
+                                type="file"
+                                id="imagen_file"
+                                accept="image/*"
+                                class="hidden"
+                            />
+                            <label
+                                for="imagen_file"
+                                class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-primary/50 transition-colors"
+                            >
+                                <div
+                                    class="flex flex-col items-center justify-center pt-5 pb-6"
+                                >
+                                    <svg
+                                        class="w-8 h-8 mb-3 text-gray-400"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        ><path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                        ></path></svg
+                                    >
+                                    <p class="mb-2 text-sm text-gray-500">
+                                        <span class="font-bold"
+                                            >Haz clic para subir</span>
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        WebP, PNG, JPG (Máx. 800px)
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Preview Container -->
+                        <div
+                            id="previewContainer"
+                            class="hidden mt-4 relative w-32 h-32 rounded-xl overflow-hidden border border-gray-200 shadow-sm group"
+                        >
+                            <img
+                                id="imagePreview"
+                                src=""
+                                alt="Vista previa"
+                                class="w-full h-full object-cover"
+                            />
+                            <button
+                                type="button"
+                                id="removeImageBtn"
+                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Eliminar imagen"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    ><path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"></path></svg
+                                >
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -233,17 +294,72 @@ const supabaseServer = await getSupabaseServer(Astro.cookies);
 
 <script>
     import { supabase } from "../../../lib/supabase";
+    import imageCompression from "browser-image-compression";
 
     const form = document.getElementById(
         "createProductForm",
     ) as HTMLFormElement;
     const submitBtn = document.getElementById("submitBtn") as HTMLButtonElement;
+    const imageInput = document.getElementById(
+        "imagen_file",
+    ) as HTMLInputElement;
+    const imagePreview = document.getElementById(
+        "imagePreview",
+    ) as HTMLImageElement;
+    const previewContainer = document.getElementById("previewContainer");
+    const removeImageBtn = document.getElementById("removeImageBtn");
 
+    let compressedImageFile: File | null = null;
+
+    // 1. Image Selection & Preview Logic
+    imageInput?.addEventListener("change", async (event) => {
+        const input = event.target as HTMLInputElement;
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            try {
+                // Options for compression
+                const options = {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 800,
+                    useWebWorker: true,
+                    fileType: "image/webp",
+                };
+
+                // Show loading state in preview? Optional
+
+                // Compress
+                compressedImageFile = await imageCompression(file, options);
+
+                // Preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (imagePreview && e.target?.result) {
+                        imagePreview.src = e.target.result as string;
+                        previewContainer?.classList.remove("hidden");
+                    }
+                };
+                reader.readAsDataURL(compressedImageFile);
+            } catch (error) {
+                console.error("Error compressing image:", error);
+                alert("Error al procesar la imagen.");
+            }
+        }
+    });
+
+    // 2. Remove Image Logic
+    removeImageBtn?.addEventListener("click", () => {
+        if (imageInput) imageInput.value = "";
+        if (imagePreview) imagePreview.src = "";
+        previewContainer?.classList.add("hidden");
+        compressedImageFile = null;
+    });
+
+    // 3. Form Submission
     form?.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (!submitBtn) return;
 
-        // Loading State
         const originalText = submitBtn.innerHTML;
         submitBtn.disabled = true;
         submitBtn.innerHTML = `<span class="animate-spin inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> Guardando...`;
@@ -257,8 +373,8 @@ const supabaseServer = await getSupabaseServer(Astro.cookies);
             const stock_cantidad = parseInt(
                 formData.get("stock_cantidad") as string,
             );
-            const imagen_url = formData.get("imagen_url") as string;
             const descripcion = formData.get("descripcion") as string;
+            // imagen_file is handled separately
 
             if (
                 !nombre ||
@@ -269,37 +385,51 @@ const supabaseServer = await getSupabaseServer(Astro.cookies);
                 throw new Error("Por favor completa los campos obligatorios.");
             }
 
-            // Check Auth client-side just in case
+            // A. Check Auth
             const {
                 data: { session },
             } = await supabase.auth.getSession();
-            if (!session) {
-                throw new Error(
-                    "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
-                );
+            if (!session) throw new Error("Tu sesión ha expirado.");
+
+            // B. Upload Image (if exists)
+            let finalImageUrl = null;
+            if (compressedImageFile) {
+                const fileName = `product-${Date.now()}-${Math.floor(Math.random() * 1000)}.webp`;
+                const { data: uploadData, error: uploadError } =
+                    await supabase.storage
+                        .from("productos")
+                        .upload(fileName, compressedImageFile, {
+                            cacheControl: "3600",
+                            upsert: false,
+                        });
+
+                if (uploadError) throw uploadError;
+
+                const {
+                    data: { publicUrl },
+                } = supabase.storage.from("productos").getPublicUrl(fileName);
+
+                finalImageUrl = publicUrl;
             }
 
+            // C. Insert Product
             const { error } = await supabase.from("productos").insert([
                 {
                     nombre,
-                    categoria, // Values: Galletas, Café, Chocolatería, Jugos
+                    categoria,
                     precio,
                     stock_cantidad,
-                    imagen_url: imagen_url || null,
+                    imagen_url: finalImageUrl,
                     descripcion: descripcion || null,
-                    // created_at is handled by default usually, but we can rely on DB
                 },
             ]);
 
             if (error) throw error;
 
-            // Success Redirect
             window.location.href = "/admin/productos?success=true";
         } catch (err: any) {
             console.error("Error creating product:", err);
             alert(err.message || "Ocurrió un error al guardar el producto.");
-
-            // Reset Button
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
             submitBtn.classList.remove("opacity-75", "cursor-wait");

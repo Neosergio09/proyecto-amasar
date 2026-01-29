@@ -1,0 +1,269 @@
+---
+import VendedorLayout from "../../layouts/VendedorLayout.astro";
+import { getSupabaseServer } from "../../lib/supabase";
+
+// 1. Auth Check
+const supabase = await getSupabaseServer(Astro.cookies);
+const {
+    data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) {
+    return Astro.redirect("/admin/login");
+}
+
+// 2. Fetch My Orders (Restrict to Seller)
+const { data: pedidos, error } = await supabase
+    .from("pedidos")
+    .select("*")
+    .eq("vendedor_id", user.id)
+    .order("creado_en", { ascending: false })
+    .limit(50);
+
+if (error) console.error("Error fetching pedidos:", error.message);
+
+const estadosLogistica = [
+    "Preparación",
+    "En horno",
+    "Empacado",
+    "En camino",
+    "Entregado",
+    "Cancelado"
+];
+---
+
+<VendedorLayout title="Mis Pedidos | Amasar Go">
+    <div class="min-h-screen bg-gray-50 pb-24">
+         <!-- Header -->
+        <header
+            class="sticky top-0 z-30 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 px-6 py-4 rounded-b-[2rem] flex items-center justify-between"
+        >
+             <button
+                onclick="window.history.back()"
+                class="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+                <svg
+                    class="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"></path></svg
+                >
+            </button>
+            <h1 class="text-lg font-black text-gray-900 tracking-tight">
+                Historial de Pedidos
+            </h1>
+            <div class="w-10"></div>
+        </header>
+
+        <main class="p-4 space-y-4">
+            {
+                !pedidos || pedidos.length === 0 ? (
+                    <div class="text-center py-20 text-gray-500">
+                        No has realizado pedidos aún.
+                    </div>
+                ) : (
+                    pedidos.map((ped) => (
+                        <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-5 overflow-hidden relative group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-black uppercase px-2 py-1 rounded-lg mb-1">
+                                        {ped.tag_rastreo}
+                                    </span>
+                                    <h3 class="font-bold text-gray-900 leading-tight">
+                                        {ped.cliente_nombre}
+                                    </h3>
+                                    <p class="text-xs text-gray-400 mt-0.5">
+                                        {new Date(ped.creado_en).toLocaleDateString('es-CO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
+                                <div class={`text-[10px] font-bold uppercase px-3 py-1 rounded-full border ${
+                                    ped.estado === 'Entregado' ? 'bg-green-50 text-green-600 border-green-100' : 
+                                    ped.estado === 'Cancelado' ? 'bg-red-50 text-red-600 border-red-100' :
+                                    'bg-orange-50 text-orange-600 border-orange-100'
+                                }`}>
+                                    {ped.estado}
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-xl p-3 mb-4 space-y-1">
+                                {(ped.detalles || []).map((item: any) => (
+                                    <div class="flex justify-between text-xs text-gray-600">
+                                        <span>{item.qty}x {item.visualName || item.name}</span>
+                                        <span class="font-bold">${(item.price * item.qty).toLocaleString()}</span>
+                                    </div>
+                                ))}
+                                <div class="border-t border-gray-200 mt-2 pt-2 flex justify-between text-sm font-black text-gray-900">
+                                    <span>Total</span>
+                                    <span>${(ped.total || 0).toLocaleString()}</span>
+                                </div>
+                            </div>
+
+                            <!-- Actions (Only if not Cancelled or Delivered) -->
+                            {ped.estado !== 'Cancelado' && ped.estado !== 'Entregado' && (
+                                <div class="flex gap-2">
+                                    <button
+                                        class="edit-order flex-1 bg-blue-50 text-blue-600 font-bold text-xs py-3 rounded-xl hover:bg-blue-100 transition-colors"
+                                        data-id={ped.id}
+                                        data-detalles={JSON.stringify(ped.detalles || [])}
+                                    >
+                                        ✏️ Editar
+                                    </button>
+                                    <button
+                                        class="cancel-order flex-1 bg-red-50 text-red-600 font-bold text-xs py-3 rounded-xl hover:bg-red-100 transition-colors"
+                                        data-id={ped.id}
+                                        data-detalles={JSON.stringify(ped.detalles || [])}
+                                    >
+                                        🚫 Cancelar
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )
+            }
+        </main>
+
+        <!-- Edit Modal (Reused) -->
+        <dialog id="editModal" class="bg-white rounded-[2.5rem] shadow-2xl p-0 w-full max-w-lg backdrop:bg-gray-900/20 backdrop:backdrop-blur-sm m-auto">
+            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-black text-gray-900">Editar Pedido</h3>
+                <button onclick="document.getElementById('editModal').close()" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200">
+                    ✖
+                </button>
+            </div>
+            <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto" id="modalContent">
+                <!-- Items -->
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-[2.5rem] flex gap-3">
+                <button onclick="document.getElementById('editModal').close()" class="flex-1 bg-white border border-gray-200 text-gray-600 font-bold h-12 rounded-[2.5rem]">Cancelar</button>
+                <button id="saveEditBtn" class="flex-1 bg-blue-600 text-white font-bold h-12 rounded-[2.5rem] shadow-lg shadow-blue-200">Guardar</button>
+            </div>
+        </dialog>
+    </div>
+</VendedorLayout>
+
+<script>
+    import { supabase } from "../../lib/supabase";
+
+    // Reusing the exact same logic logic for Edit/Cancel
+    // This could be extracted to a shared component/script, but for speed we duplicate the lightweight logic.
+    
+    document.addEventListener("DOMContentLoaded", () => {
+         // --- Edit Order Logic ---
+        const editModal = document.getElementById("editModal") as HTMLDialogElement;
+        const modalContent = document.getElementById("modalContent");
+        const saveEditBtn = document.getElementById("saveEditBtn");
+        
+        let currentEditId: string | null = null;
+        let oldDetails: any[] = [];
+
+        document.querySelectorAll(".edit-order").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-id");
+                const detallesRaw = btn.getAttribute("data-detalles");
+                
+                if (!id || !detallesRaw) return;
+
+                currentEditId = id;
+                oldDetails = JSON.parse(detallesRaw);
+                
+                if (modalContent) {
+                    modalContent.innerHTML = oldDetails.map((item, idx) => `
+                        <div class="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 item-row" data-idx="${idx}">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-gray-900 truncate text-sm">${item.visualName || item.name}</p>
+                                <p class="text-xs text-gray-500">$${item.price}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="number" min="0" value="${item.qty}" class="qty-input w-16 h-10 rounded-xl border-gray-200 text-center font-bold text-sm" />
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                editModal.showModal();
+            });
+        });
+
+        saveEditBtn?.addEventListener("click", async () => {
+            if (!currentEditId || !modalContent) return;
+            const originalText = saveEditBtn.textContent;
+            saveEditBtn.textContent = "Guardando...";
+            (saveEditBtn as HTMLButtonElement).disabled = true;
+
+            try {
+                const inputs = modalContent.querySelectorAll(".qty-input");
+                const newDetails = oldDetails.map((item, idx) => {
+                    const input = inputs[idx] as HTMLInputElement;
+                    return { ...item, qty: parseInt(input.value) || 0 };
+                });
+
+                // Calculate Deltas & Sync Stock
+                const updates = newDetails.map(async (newItem, idx) => {
+                    const oldItem = oldDetails[idx];
+                    const delta = newItem.qty - oldItem.qty;
+
+                    if (delta !== 0) {
+                        const { data: prod } = await supabase.from('productos').select('stock_cantidad').eq('id', newItem.id).single();
+                        if (prod) {
+                            await supabase.from('productos').update({ stock_cantidad: prod.stock_cantidad - delta }).eq('id', newItem.id);
+                        }
+                    }
+                });
+                await Promise.all(updates);
+
+                const newTotal = newDetails.reduce((acc, item) => acc + (item.qty * item.price), 0);
+                const { error } = await supabase.from('pedidos').update({ detalles: newDetails, total: newTotal }).eq('id', currentEditId);
+
+                if (error) throw error;
+                window.location.reload();
+            } catch (err: any) {
+                alert("Error: " + err.message);
+                saveEditBtn.textContent = originalText;
+                (saveEditBtn as HTMLButtonElement).disabled = false;
+            }
+        });
+
+        // --- Cancel Logic ---
+        document.querySelectorAll(".cancel-order").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const id = btn.getAttribute("data-id");
+                const detallesRaw = btn.getAttribute("data-detalles");
+                
+                if (!id || !confirm("¿Cancelar pedido? Se restaurará el stock.")) return;
+
+                const details = JSON.parse(detallesRaw || "[]");
+                
+                try {
+                    const restores = details.map(async (item: any) => {
+                        const { data: prod } = await supabase.from('productos').select('stock_cantidad').eq('id', item.id).single();
+                        if (prod) {
+                            await supabase.from('productos').update({ stock_cantidad: prod.stock_cantidad + item.qty }).eq('id', item.id);
+                        }
+                    });
+                    await Promise.all(restores);
+
+                    const { error } = await supabase.from('pedidos').update({ estado: 'Cancelado' }).eq('id', id);
+                    if (error) throw error;
+
+                    window.location.reload();
+                } catch (e: any) {
+                    alert("Error: " + e.message);
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    /* Mobile safe area */
+    dialog::backdrop {
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+    }
+</style>

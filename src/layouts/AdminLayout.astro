@@ -10,6 +10,29 @@ interface Props {
 
 const { title = "Panel de Control" } = Astro.props;
 
+// 1. Fetch User Data for Header
+const supabase = await getSupabaseServer(Astro.cookies);
+const {
+    data: { user },
+} = await supabase.auth.getUser();
+
+let profileName = "Administrador Principal";
+let profileEmail = "";
+
+if (user) {
+    profileEmail = user.email || "";
+    // Fetch profile name
+    const { data: profile } = await supabase
+        .from("perfiles")
+        .select("nombre")
+        .eq("id", user.id)
+        .single();
+
+    if (profile?.nombre) {
+        profileName = profile.nombre;
+    }
+}
+
 // Get current path for active menu highlighting
 const currentPath = Astro.url.pathname;
 
@@ -156,10 +179,10 @@ const navItems = [
                 <div class="flex items-center gap-4">
                     <div class="text-right hidden md:block">
                         <span class="block text-sm font-bold text-slate-700"
-                            >Administrador</span
+                            >{profileName}</span
                         >
                         <span class="block text-xs text-slate-400"
-                            >auth@amasar.com</span
+                            >Administrador</span
                         >
                     </div>
                     <div

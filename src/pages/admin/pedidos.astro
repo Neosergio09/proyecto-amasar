@@ -7,11 +7,11 @@ export const prerender = false;
 
 const title = "Gestión de Pedidos y Rastreo | Amasar";
 
-// Traemos los pedidos frescos de la base de datos
+// Traemos los pedidos frescos de la base de datos con el cliente asociado
 const { data: pedidos, error } = await supabase
   .from("pedidos")
-  .select("*")
-  .order("creado_en", { ascending: false });
+  .select("*, clientes(nombre_comercial)")
+  .order("created_at", { ascending: false });
 
 if (error) console.error("Error cargando pedidos:", error.message);
 
@@ -25,55 +25,8 @@ const estadosLogistica = [
 ---
 
 <AdminLayout title={title}>
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
-    <div class="lg:col-span-1">
-      <div
-        class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 sticky top-32"
-      >
-        <h2 class="text-lg font-bold text-secondary mb-6">Nuevo Despacho</h2>
-        <form id="orderForm" class="space-y-4">
-          <div>
-            <label
-              class="block text-[10px] uppercase font-black text-slate-400 mb-2 tracking-widest"
-              >Panadería / Cliente</label
-            >
-            <input
-              type="text"
-              name="cliente"
-              required
-              class="w-full p-4 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary transition-all"
-              placeholder="Ej: Masa Madre Bog"
-            />
-          </div>
-
-          <div>
-            <label
-              class="block text-[10px] uppercase font-black text-slate-400 mb-2 tracking-widest"
-              >Estado de Inicio</label
-            >
-            <select
-              name="estado"
-              class="w-full p-4 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-primary"
-            >
-              {
-                estadosLogistica.map((est) => (
-                  <option value={est}>{est}</option>
-                ))
-              }
-            </select>
-          </div>
-
-          <button
-            type="submit"
-            class="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-primary transition-all shadow-lg active:scale-95"
-          >
-            Generar Orden
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <div class="lg:col-span-3">
+  <div class="w-full">
+    <div class="w-full">
       <div
         class="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden"
       >
@@ -97,7 +50,7 @@ const estadosLogistica = [
                   </td>
                   <td class="px-8 py-6">
                     <p class="font-bold text-secondary text-sm">
-                      {ped.cliente_nombre}
+                      {ped.clientes?.nombre_comercial || 'Cliente no encontrado'}
                     </p>
                     <p class="text-[9px] text-slate-400 uppercase tracking-widest">
                       Bogotá, Colombia
@@ -120,10 +73,33 @@ const estadosLogistica = [
                       </button>
                     </div>
                   </td>
-                  <td class="px-8 py-6 text-center">
+                  <td class="px-8 py-6 text-center flex items-center justify-center gap-2">
+                     <!-- Edit Button -->
                     <button
-                      class="delete-order text-red-200 hover:text-red-500 transition-colors p-2"
+                      class="edit-order text-blue-500 hover:bg-blue-50 p-2 rounded-full transition-colors"
                       data-id={ped.id}
+                      data-detalles={JSON.stringify(ped.detalles || [])}
+                      data-total={ped.total || 0}
+                      title="Editar Cantidades"
+                    >
+                      ✏️
+                    </button>
+                    <!-- Cancel Button -->
+                     {ped.estado !== 'Cancelado' && (
+                        <button
+                        class="cancel-order text-orange-500 hover:bg-orange-50 p-2 rounded-full transition-colors"
+                        data-id={ped.id}
+                        data-detalles={JSON.stringify(ped.detalles || [])}
+                        title="Cancelar Pedido (Restaurar Stock)"
+                        >
+                        🚫
+                        </button>
+                     )}
+                     <!-- Delete Button -->
+                    <button
+                      class="delete-order text-red-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors"
+                      data-id={ped.id}
+                      title="Eliminar (Solo Registro)"
                     >
                       🗑️
                     </button>
@@ -136,94 +112,59 @@ const estadosLogistica = [
       </div>
     </div>
   </div>
+
+  <!-- Edit Modal -->
+  <dialog id="editModal" class="bg-white rounded-[2.5rem] shadow-2xl p-0 w-full max-w-lg backdrop:bg-gray-900/20 backdrop:backdrop-blur-sm">
+      <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
+          <h3 class="text-xl font-black text-gray-900">Editar Pedido</h3>
+          <button onclick="document.getElementById('editModal').close()" class="bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200">
+              ✖
+          </button>
+      </div>
+      <div class="p-8 space-y-4" id="modalContent">
+          <!-- Inject Items Here -->
+      </div>
+      <div class="p-8 border-t border-gray-100 bg-gray-50 rounded-b-[2.5rem] flex justify-end gap-3">
+          <button onclick="document.getElementById('editModal').close()" class="bg-white border border-gray-200 text-gray-600 font-bold px-6 h-12 rounded-[2.5rem] hover:bg-gray-50">Cancelar</button>
+          <button id="saveEditBtn" class="bg-blue-600 text-white font-bold px-8 h-12 rounded-[2.5rem] hover:bg-blue-500 shadow-lg shadow-blue-200">Guardar Cambios</button>
+      </div>
+  </dialog>
+
 </AdminLayout>
 
 <script>
   import { supabase } from "../../lib/supabase";
 
   const initOrders = () => {
-    console.log("🔍 [TRAZA 1]: Script de Pedidos inicializado correctamente.");
+    console.log("🔍 [TRAZA 1]: Script de Pedidos inicializado.");
 
-    const form = document.getElementById("orderForm") as HTMLFormElement;
-
-    // 1. Lógica para Crear Pedido
-    form?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-
-      const year = 2026;
-      const randomId = Math.floor(1000 + Math.random() * 9000);
-      const generatedTag = `AM-${year}-${randomId}`;
-
-      const { error } = await supabase.from("pedidos").insert([
-        {
-          tag_rastreo: generatedTag,
-          cliente_nombre: formData.get("cliente"),
-          estado: formData.get("estado"),
-          creado_en: new Date().toISOString(),
-        },
-      ]);
-
-      if (error) alert("Error al crear orden: " + error.message);
-      else window.location.reload();
-    });
-
-    // 2. LÓGICA DE ACTUALIZACIÓN CON TRAZABILIDAD
+    // --- 1. Update Status (Existing) ---
     const updateButtons = document.querySelectorAll(".update-btn");
-    console.log(
-      `🔍 [TRAZA 2]: Se encontraron ${updateButtons.length} botones de actualización.`,
-    );
-
     updateButtons.forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         const button = e.currentTarget as HTMLButtonElement;
         const id = button.getAttribute("data-id");
-        console.log("🔍 [TRAZA 3]: Botón clickeado. ID del pedido:", id);
-
-        // Localizamos el selector de la misma fila
         const row = button.closest("tr");
-        const select = row?.querySelector(
-          ".status-select",
-        ) as HTMLSelectElement;
+        const select = row?.querySelector(".status-select") as HTMLSelectElement;
         const nuevoEstado = select.value;
-        console.log("🔍 [TRAZA 4]: Nuevo estado capturado:", nuevoEstado);
 
-        if (!id || !nuevoEstado) {
-          console.error(
-            "❌ [ERROR]: No se pudo obtener el ID o el Estado del DOM.",
-          );
-          return;
-        }
+        if (!id || !nuevoEstado) return;
 
-        // Feedback visual de inicio
         button.innerText = "...";
         button.disabled = true;
 
-        console.log("🔍 [TRAZA 5]: Enviando actualización a Supabase...");
-
-        const { data, error, status } = await supabase
+        const { error } = await supabase
           .from("pedidos")
           .update({ estado: nuevoEstado })
-          .eq("id", id)
-          .select(); // El .select() ayuda a confirmar que el cambio ocurrió
+          .eq("id", id);
 
         if (error) {
-          console.error("❌ [TRAZA 6]: Error de Supabase:", error.message);
-          alert("Error al actualizar: " + error.message);
+          alert("Error: " + error.message);
           button.innerText = "Guardar";
           button.disabled = false;
         } else {
-          console.log(
-            "✅ [TRAZA 7]: ¡Éxito! Respuesta de la DB:",
-            data,
-            "Status:",
-            status,
-          );
-
-          // Animación de éxito
           button.innerText = "¡OK!";
           button.classList.replace("bg-secondary", "bg-green-500");
-
           setTimeout(() => {
             button.innerText = "Guardar";
             button.classList.replace("bg-green-500", "bg-secondary");
@@ -233,11 +174,154 @@ const estadosLogistica = [
       });
     });
 
-    // 3. Borrar Pedidos
+    // --- 2. Edit Order Logic (New) ---
+    const editModal = document.getElementById("editModal") as HTMLDialogElement;
+    const modalContent = document.getElementById("modalContent");
+    const saveEditBtn = document.getElementById("saveEditBtn");
+    
+    let currentEditId: string | null = null;
+    let oldDetails: any[] = []; // To calculate delta
+
+    document.querySelectorAll(".edit-order").forEach(btn => {
+        btn.addEventListener("click", () => {
+             const id = btn.getAttribute("data-id");
+             const detallesRaw = btn.getAttribute("data-detalles");
+             
+             if (!id || !detallesRaw) return;
+
+             currentEditId = id;
+             oldDetails = JSON.parse(detallesRaw);
+             
+             // Render Items
+             if (modalContent) {
+                 // Map cantidad to qty just in case mixing old/new records
+                 const renderItems = oldDetails.map(item => ({
+                     ...item,
+                     qty: item.cantidad ?? item.qty // Fallback for backward compat
+                 }));
+
+                 modalContent.innerHTML = renderItems.map((item, idx) => `
+                    <div class="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 item-row" data-idx="${idx}">
+                        <div class="flex-1">
+                            <p class="font-bold text-gray-900">${item.visualName || item.name || 'Producto'}</p>
+                            <p class="text-xs text-gray-500">$${item.precio || item.price}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <label class="text-xs font-bold uppercase text-gray-400">Cant.</label>
+                             <input type="number" min="0" value="${item.qty}" class="qty-input w-20 h-10 rounded-xl border-gray-200 text-center font-bold" />
+                        </div>
+                    </div>
+                 `).join('');
+             }
+
+             editModal.showModal();
+        });
+    });
+
+    saveEditBtn?.addEventListener("click", async () => {
+        if (!currentEditId || !modalContent) return;
+
+        saveEditBtn.textContent = "Procesando...";
+        (saveEditBtn as HTMLButtonElement).disabled = true;
+
+        try {
+            // 1. Capture New State
+            const inputs = modalContent.querySelectorAll(".qty-input");
+            const newDetails = oldDetails.map((item, idx) => {
+                 const input = inputs[idx] as HTMLInputElement;
+                 const newQty = parseInt(input.value) || 0;
+                 return { ...item, cantidad: newQty, qty: newQty }; // Update both for consistency
+            });
+
+            // 2. Calculate Deltas & Update Stock
+            const updates = newDetails.map(async (newItem, idx) => {
+                const oldItem = oldDetails[idx];
+                const oldQty = oldItem.cantidad ?? oldItem.qty ?? 0;
+                const delta = newItem.qty - oldQty;
+
+                if (delta !== 0) {
+                     // Fetch current stock
+                     const { data: prod } = await supabase.from('productos').select('stock_cantidad').eq('id', newItem.id).single();
+                     if (prod) {
+                         const newStock = prod.stock_cantidad - delta;
+                         await supabase.from('productos').update({ stock_cantidad: newStock }).eq('id', newItem.id);
+                     }
+                }
+            });
+            
+            await Promise.all(updates);
+
+            // 3. Update Order
+            // Recalculate Total
+            const newTotal = newDetails.reduce((acc, item) => {
+                const price = item.precio ?? item.price ?? 0;
+                return acc + (item.qty * price);
+            }, 0);
+            
+            const { error } = await supabase.from('pedidos').update({
+                detalles: newDetails,
+                total: newTotal
+            }).eq('id', currentEditId);
+
+            if (error) throw error;
+
+            alert("✅ Pedido actualizado y stock sincronizado.");
+            window.location.reload();
+
+        } catch (err: any) {
+            console.error(err);
+            alert("Error: " + err.message);
+            saveEditBtn.textContent = "Guardar Cambios";
+            (saveEditBtn as HTMLButtonElement).disabled = false;
+        }
+    });
+
+    // --- 3. Cancel Logic (New) ---
+    document.querySelectorAll(".cancel-order").forEach(btn => {
+        btn.addEventListener("click", async () => {
+             const id = btn.getAttribute("data-id");
+             const detallesRaw = btn.getAttribute("data-detalles");
+             
+             if (!id || !confirm("¿Cancelar pedido? Esto restaurará el stock de los productos.")) return;
+
+             const details = JSON.parse(detallesRaw || "[]");
+             const button = btn as HTMLButtonElement;
+             button.disabled = true;
+
+             try {
+                // Restore Stock
+                const restores = details.map(async (item: any) => {
+                     const qty = item.cantidad ?? item.qty ?? 0;
+                     if (qty === 0) return;
+
+                     const { data: prod } = await supabase.from('productos').select('stock_cantidad').eq('id', item.id).single();
+                     if (prod) {
+                         // Add back the quantity
+                         await supabase.from('productos').update({ stock_cantidad: prod.stock_cantidad + qty }).eq('id', item.id);
+                     }
+                });
+
+                await Promise.all(restores);
+
+                // Update Status
+                const { error } = await supabase.from('pedidos').update({ estado: 'Cancelado' }).eq('id', id);
+                if (error) throw error;
+
+                alert("Pedido cancelado y stock restaurado.");
+                window.location.reload();
+
+             } catch (e: any) {
+                 alert("Error: " + e.message);
+                 button.disabled = false;
+             }
+        });
+    });
+
+    // --- 4. Delete Logic (Renamed/Kept) ---
     document.querySelectorAll(".delete-order").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-id");
-        if (confirm("¿Seguro que quieres borrar este pedido?")) {
+        if (confirm("⚠️ ¿Solo borrar registro? Esto NO restaura stock.\n\nUsa 'Cancelar' si quieres devolver los productos al inventario.")) {
           const { error } = await supabase
             .from("pedidos")
             .delete()
@@ -249,6 +333,5 @@ const estadosLogistica = [
     });
   };
 
-  // Re-inicializar en cada navegación de Astro
   document.addEventListener("astro:page-load", initOrders);
 </script>

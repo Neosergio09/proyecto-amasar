@@ -1,0 +1,383 @@
+---
+import VendedorLayout from "../../layouts/VendedorLayout.astro";
+import { getSupabaseServer } from "../../lib/supabase";
+
+const supabase = await getSupabaseServer(Astro.cookies);
+const {
+    data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) {
+    return Astro.redirect("/admin/login");
+}
+---
+
+<VendedorLayout title="Confirmar Pedido | Amasar Go">
+    <div class="fixed inset-0 bg-white z-[60] flex flex-col">
+        <!-- Header Simulado -->
+        <div
+            class="px-6 py-4 border-b border-gray-100 flex items-center justify-between"
+        >
+            <button
+                onclick="window.history.back()"
+                class="p-2 rounded-full hover:bg-gray-100"
+            >
+                <svg
+                    class="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"></path></svg
+                >
+            </button>
+            <h1 class="text-lg font-bold text-gray-900">Resumen del Pedido</h1>
+            <div class="w-10"></div>
+        </div>
+
+        <!-- Contenido Scrollable -->
+        <main class="flex-1 overflow-y-auto p-6 space-y-6">
+            <!-- Sección Cliente -->
+            <section class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                <span
+                    class="text-[10px] uppercase font-bold text-blue-400 tracking-wider"
+                    >Cliente Seleccionado</span
+                >
+                <div class="flex items-center gap-3 mt-2">
+                    <div
+                        class="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold"
+                        id="clientAvatar"
+                    >
+                        ?
+                    </div>
+                    <div>
+                        <h3
+                            class="font-bold text-gray-900 text-lg leading-none"
+                            id="clientName"
+                        >
+                            Seleccionando...
+                        </h3>
+                        <p
+                            class="text-xs text-blue-500 font-medium mt-1 cursor-pointer underline"
+                            onclick="window.location.href='/vendedores/clientes'"
+                        >
+                            Cambiar
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Lista de Items del Carrito -->
+            <section>
+                <h2
+                    class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3"
+                >
+                    Productos
+                </h2>
+                <div id="orderItems" class="space-y-3">
+                    <!-- Items injectados por JS -->
+                    <div class="animate-pulse bg-gray-100 h-16 rounded-xl">
+                    </div>
+                    <div class="animate-pulse bg-gray-100 h-16 rounded-xl">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Totales -->
+            <section class="border-t border-gray-100 pt-4 space-y-2">
+                <div class="flex justify-between text-gray-500">
+                    <span>Subtotal</span>
+                    <span id="subtotalDisplay">$0</span>
+                </div>
+                <div
+                    class="flex justify-between text-xl font-black text-gray-900"
+                >
+                    <span>Total</span>
+                    <span id="totalDisplay">$0</span>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer Actions -->
+        <div class="p-6 bg-white border-t border-gray-100 pb-safe">
+            <button
+                id="confirmBtn"
+                class="w-full bg-green-600 hover:bg-green-500 text-white h-14 rounded-2xl font-bold text-lg shadow-xl shadow-green-200 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+            >
+                <span>Confirmar Pedido</span>
+                <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"></path></svg
+                >
+            </button>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div
+        id="successModal"
+        class="fixed inset-0 bg-black/50 z-[80] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300"
+    >
+        <div
+            class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-300"
+            id="successModalContent"
+        >
+            <div
+                class="bg-green-50 p-6 flex flex-col items-center justify-center text-center border-b border-green-100"
+            >
+                <div
+                    class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 shadow-sm"
+                >
+                    <svg
+                        class="w-8 h-8 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="3"
+                            d="M5 13l4 4L19 7"></path></svg
+                    >
+                </div>
+                <h2 class="text-2xl font-black text-gray-900 leading-tight">
+                    ¡Pedido Guardado<br />con Éxito!
+                </h2>
+                <p class="text-green-700 font-medium mt-2 text-sm">
+                    El inventario se ha actualizado correctamente.
+                </p>
+            </div>
+
+            <div class="p-6 space-y-3">
+                <button
+                    id="whatsappBtn"
+                    class="w-full bg-green-600 hover:bg-green-500 text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-lg shadow-green-200 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                >
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"
+                        ><path
+                            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"
+                        ></path></svg
+                    >
+                    <span>Enviar Recibo</span>
+                </button>
+
+                <button
+                    id="homeBtn"
+                    class="w-full bg-white hover:bg-gray-50 text-gray-700 py-3.5 px-6 rounded-2xl font-bold text-base border-2 border-gray-200 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                >
+                    <span>Nueva Venta</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div
+        id="loadingOverlay"
+        class="fixed inset-0 bg-white/90 z-[70] hidden flex flex-col items-center justify-center"
+    >
+        <div
+            class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"
+        >
+        </div>
+        <h2 class="text-xl font-bold text-gray-900">Procesando Pedido...</h2>
+        <p class="text-gray-500 text-sm mt-2">Actualizando inventario</p>
+    </div>
+    <div id="meta-data" data-vendedor-id={user.id} class="hidden"></div>
+</VendedorLayout>
+
+<script>
+    import { supabase } from "../../lib/supabase";
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        const clientNameEl = document.getElementById("clientName");
+        const clientAvatarEl = document.getElementById("clientAvatar");
+        const orderItemsEl = document.getElementById("orderItems");
+        const totalDisplay = document.getElementById("totalDisplay");
+        const subtotalDisplay = document.getElementById("subtotalDisplay");
+        const confirmBtn = document.getElementById("confirmBtn");
+        const loadingOverlay = document.getElementById("loadingOverlay");
+
+        // 1. Recuperar Datos Locales
+        const savedCustomer = localStorage.getItem("active_customer");
+        // Ensure index.astro saves 'cart_data'
+
+        let cartItems: any[] = [];
+        try {
+            cartItems = JSON.parse(localStorage.getItem("cart_data") || "[]");
+        } catch (e) {
+            console.error("Error parsing cart", e);
+        }
+
+        if (cartItems.length === 0) {
+            alert("No hay productos en el carrito.");
+            window.location.href = "/vendedores";
+            return;
+        }
+
+        // 2. Renderizar Cliente
+        let cliente: any = {
+            id: "anon",
+            nombre_comercial: "Cliente General",
+            telefono: "",
+        };
+        if (savedCustomer) {
+            const parsed = JSON.parse(savedCustomer);
+            // Handle both structure just in case, but prefer nombre_comercial
+            const name = parsed.nombre_comercial || parsed.nombre || "Cliente";
+            cliente = { ...parsed, nombre_comercial: name };
+
+            if (clientNameEl) clientNameEl.textContent = name;
+            if (clientAvatarEl)
+                clientAvatarEl.textContent = name.charAt(0).toUpperCase();
+        } else {
+            if (clientNameEl)
+                clientNameEl.textContent = "Cliente General (Mostrador)";
+            if (clientAvatarEl) clientAvatarEl.textContent = "G";
+        }
+
+        // 3. Renderizar Items
+        let total = 0;
+        if (orderItemsEl) orderItemsEl.innerHTML = "";
+
+        cartItems.forEach((item: any) => {
+            total += item.price * item.qty;
+
+            const div = document.createElement("div");
+            div.className =
+                "flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm";
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="bg-gray-100 w-10 h-10 rounded-lg flex items-center justify-center text-xs text-gray-500 font-bold">x${item.qty}</div>
+                    <div>
+                        <p class="font-bold text-gray-900 text-sm">${item.name}</p>
+                        <p class="text-xs text-gray-400">$${item.price.toLocaleString()} un.</p>
+                    </div>
+                </div>
+                <span class="font-bold text-gray-900">$${(item.price * item.qty).toLocaleString()}</span>
+            `;
+            orderItemsEl?.appendChild(div);
+        });
+
+        if (totalDisplay)
+            totalDisplay.textContent = `$${total.toLocaleString("es-CO")}`;
+        if (subtotalDisplay)
+            subtotalDisplay.textContent = `$${total.toLocaleString("es-CO")}`;
+
+        // 4. Lógica de Confirmación (Transaccional-ish)
+        confirmBtn?.addEventListener("click", async () => {
+            if (!confirmBtn || (confirmBtn as HTMLButtonElement).disabled)
+                return;
+
+            // UI Loading
+            loadingOverlay?.classList.remove("hidden");
+            (confirmBtn as HTMLButtonElement).disabled = true;
+
+            try {
+                const year = 2026;
+                const randomId = Math.floor(1000 + Math.random() * 9000);
+                const generatedTag = `AM-${year}-${randomId}`;
+
+                // A. Crear Orden y Descontar Stock (Atómico via RPC)
+                const vendedorId = document
+                    .getElementById("meta-data")
+                    ?.getAttribute("data-vendedor-id");
+
+                console.table(cartItems); // Debug payload
+
+                // Map items to match RPC expected structure (cantidad instead of qty)
+                const detallesPayload = cartItems.map((item: any) => ({
+                    id: item.id,
+                    cantidad: item.qty, // STRICTLY the bought amount
+                    precio: item.price,
+                }));
+
+                const { data: rpcData, error: rpcError } = await supabase.rpc(
+                    "crear_pedido_con_stock",
+                    {
+                        p_cliente_nombre: cliente.nombre_comercial,
+                        p_cliente_id: cliente.id !== "anon" ? cliente.id : null,
+                        p_tag_rastreo: generatedTag,
+                        p_total: total,
+                        p_detalles: detallesPayload,
+                        p_vendedor_id: vendedorId, // Ensure Vendedor is tracked
+                    },
+                );
+
+                if (rpcError) throw new Error(rpcError.message);
+                if (!rpcData.success)
+                    throw new Error(
+                        rpcData.error || "Error desconocido en transacción",
+                    );
+
+                // B. Éxito - Mostrar Modal sin redirect automático
+                localStorage.removeItem("cart_data");
+
+                // 1. Preparar datos para WhatsApp
+                const trackingUrl = `${window.location.origin}/rastreo/${generatedTag}`;
+                const waMessage = `*Pedido Nuevo - Amasar Go* 🚀\n\n*Cliente:* ${cliente.nombre_comercial}\n*Código de Rastreo:* ${generatedTag}\n\n${cartItems.map((i) => `- ${i.qty}x ${i.name} ($${(i.price * i.qty).toLocaleString()})`).join("\n")}\n\n*Total: $${total.toLocaleString()}*\n\nSigue tu pedido aquí: ${trackingUrl}`;
+
+                // Clean phone number: remove non-digits
+                const phone = cliente.telefono
+                    ? cliente.telefono.replace(/\D/g, "")
+                    : "";
+                const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(waMessage)}`;
+
+                // 2. Configurar acciones del Modal
+                const whatsappBtn = document.getElementById("whatsappBtn");
+                const homeBtn = document.getElementById("homeBtn");
+                const successModal = document.getElementById("successModal");
+                const successModalContent = document.getElementById(
+                    "successModalContent",
+                );
+
+                if (whatsappBtn) {
+                    whatsappBtn.onclick = () => window.open(waLink, "_blank");
+                }
+
+                if (homeBtn) {
+                    homeBtn.onclick = () => {
+                        window.location.href =
+                            "/vendedores?success=order_created";
+                    };
+                }
+
+                // 3. UI Transition
+                loadingOverlay?.classList.add("hidden");
+                successModal?.classList.remove("hidden");
+                // Small delay for animation
+                setTimeout(() => {
+                    successModalContent?.classList.remove(
+                        "scale-95",
+                        "opacity-0",
+                    );
+                    successModalContent?.classList.add(
+                        "scale-100",
+                        "opacity-100",
+                    );
+                }, 10);
+            } catch (err: any) {
+                console.error("Critical Purchase Error:", err);
+                alert("Error procesando el pedido: " + err.message);
+                loadingOverlay?.classList.add("hidden");
+                (confirmBtn as HTMLButtonElement).disabled = false;
+            }
+        });
+    });
+</script>
+
+<style>
+    .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 2rem);
+    }
+</style>

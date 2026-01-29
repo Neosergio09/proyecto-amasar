@@ -1,0 +1,814 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getSupabaseServer } from "../../lib/supabase";
+
+// 1. Auth & Server Logic
+const supabase = await getSupabaseServer(Astro.cookies);
+const {
+    data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) return Astro.redirect("/admin/login");
+
+// 2. Fetch Initial Data (Clientes & Vendedores for assignment)
+const { data: clientes } = await supabase
+    .from("clientes")
+    .select(
+        "id, nombre_comercial, direccion, telefono, status, vendedor_id, ultima_compra_at",
+    )
+    .order("nombre_comercial", { ascending: true });
+
+const { data: vendedors } = await supabase
+    .from("perfiles")
+    .select("id, nombre, rol")
+    .eq("rol", "vendedor")
+    .order("nombre", { ascending: true });
+
+const clientList = clientes || [];
+const sellerList = vendedors || [];
+---
+
+<AdminLayout title="Gestión de Clientes">
+    <div class="space-y-6">
+        <!-- Header & Actions -->
+        <div
+            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-[2.5rem] shadow-sm"
+        >
+            <div>
+                <h1 class="text-2xl font-black text-gray-900 tracking-tight">
+                    Clientes
+                </h1>
+                <p class="text-gray-500 text-sm mt-1">
+                    Administra tu base de datos de clientes.
+                </p>
+            </div>
+            <div class="flex gap-3 w-full md:w-auto">
+                <button
+                    id="openImportModal"
+                    class="flex-1 md:flex-none h-12 px-6 rounded-[2.5rem] bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                        ></path></svg
+                    >
+                    Importar CSV
+                </button>
+                <button
+                    id="openCreateModal"
+                    class="flex-1 md:flex-none h-12 px-6 rounded-[2.5rem] bg-blue-600 text-white font-bold hover:bg-blue-500 shadow-xl shadow-blue-200 transition-all flex items-center justify-center gap-2"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 4v16m8-8H4"></path></svg
+                    >
+                    Nuevo
+                </button>
+            </div>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div
+            class="bg-white p-2 rounded-[1.5rem] shadow-sm flex items-center gap-4"
+        >
+            <div class="relative flex-1">
+                <svg
+                    class="w-5 h-5 text-gray-400 absolute left-4 top-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    ></path></svg
+                >
+                <input
+                    type="text"
+                    id="tableSearch"
+                    placeholder="Buscar por nombre, dirección..."
+                    class="w-full pl-11 pr-4 h-12 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-100 placeholder-gray-400 transition-all"
+                />
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div
+            class="bg-white rounded-[2.5rem] shadow-sm overflow-hidden border border-gray-100"
+        >
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead
+                        class="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider font-bold"
+                    >
+                        <tr>
+                            <th class="px-6 py-5">Cliente</th>
+                            <th class="px-6 py-5">Ubicación</th>
+                            <th class="px-6 py-5">Estado</th>
+                            <th class="px-6 py-5">Vendedor Asignado</th>
+                            <th class="px-6 py-5 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody
+                        class="divide-y divide-gray-100 text-sm"
+                        id="customerTableBody"
+                    >
+                        {
+                            clientList.map((c: any) => (
+                                <tr class="hover:bg-gray-50/50 transition-colors group">
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-gray-900">
+                                            {c.nombre_comercial}
+                                        </div>
+                                        <div class="text-xs text-gray-400">
+                                            {c.telefono || "Sin teléfono"}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-600">
+                                        {c.direccion || "Sin dirección"}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span
+                                            class={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${c.status === "activo" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                                        >
+                                            <span
+                                                class={`w-1.5 h-1.5 rounded-full ${c.status === "activo" ? "bg-green-500" : "bg-gray-400"}`}
+                                            />
+                                            {c.status || "activo"}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-500">
+                                        {sellerList.find(
+                                            (s: any) => s.id === c.vendedor_id,
+                                        )?.nombre || (
+                                            <span class="text-orange-400 italic">
+                                                Sin asignar
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button class="text-gray-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors">
+                                            <svg
+                                                class="w-5 h-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            {
+                clientList.length === 0 && (
+                    <div class="p-12 text-center text-gray-400">
+                        No se encontraron clientes. Comienza importando o
+                        creando uno.
+                    </div>
+                )
+            }
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- 1. Create Modal -->
+    <dialog
+        id="createModal"
+        class="bg-white rounded-[2.5rem] shadow-2xl p-0 w-full max-w-lg backdrop:bg-gray-900/20 backdrop:backdrop-blur-sm open:animate-fade-in text-left"
+    >
+        <form method="dialog" class="flex flex-col h-full max-h-[90vh]">
+            <div
+                class="px-8 py-6 border-b border-gray-100 flex justify-between items-center"
+            >
+                <h3 class="text-xl font-black text-gray-900">Nuevo Cliente</h3>
+                <button
+                    type="button"
+                    class="close-modal bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200"
+                    ><svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"></path></svg
+                    ></button
+                >
+            </div>
+            <div class="p-8 space-y-4 overflow-y-auto">
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Nombre del Negocio / Comercial <span
+                            class="text-red-500">*</span
+                        ></label
+                    >
+                    <input
+                        type="text"
+                        id="newNombre"
+                        required
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                        placeholder="Ej. Panadería La Espiga"
+                    />
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Nombre de Contacto</label
+                    >
+                    <input
+                        type="text"
+                        id="newContacto"
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                        placeholder="Ej. Juan Pérez"
+                    />
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Dirección <span class="text-red-500">*</span></label
+                    >
+                    <input
+                        type="text"
+                        id="newDireccion"
+                        required
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                        placeholder="Ej. Av. Siempre Viva 123"
+                    />
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Barrio <span class="text-red-500">*</span></label
+                    >
+                    <input
+                        type="text"
+                        id="newBarrio"
+                        required
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                    />
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Teléfono <span class="text-red-500">*</span></label
+                    >
+                    <input
+                        type="tel"
+                        id="newTelefono"
+                        required
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                        placeholder="Ej. 300 123 4567"
+                    />
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Vendedor Asignado</label
+                    >
+                    <div class="relative">
+                        <select
+                            id="newVendedor"
+                            class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium appearance-none transition-colors"
+                        >
+                            <option value="">Seleccione un vendedor...</option>
+                            {
+                                sellerList.map((s: any) => (
+                                    <option value={s.id}>{s.nombre}</option>
+                                ))
+                            }
+                        </select>
+                        <div
+                            class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                ><path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path></svg
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="p-8 border-t border-gray-100 bg-gray-50 rounded-b-[2.5rem] flex justify-end gap-3"
+            >
+                <button
+                    type="button"
+                    class="close-modal bg-white border border-gray-200 text-gray-600 font-bold px-6 h-12 rounded-[2.5rem] hover:bg-gray-50"
+                    >Cancelar</button
+                >
+                <button
+                    type="button"
+                    id="saveNewBtn"
+                    class="bg-blue-600 text-white font-bold px-8 h-12 rounded-[2.5rem] hover:bg-blue-500 shadow-lg shadow-blue-200"
+                    >Guardar</button
+                >
+            </div>
+        </form>
+    </dialog>
+
+    <!-- 2. Import Modal -->
+    <dialog
+        id="importModal"
+        class="bg-white rounded-[2.5rem] shadow-2xl p-0 w-full max-w-lg backdrop:bg-gray-900/20 backdrop:backdrop-blur-sm open:animate-fade-in text-left"
+    >
+        <form method="dialog" class="flex flex-col h-full max-h-[90vh]">
+            <div
+                class="px-8 py-6 border-b border-gray-100 flex justify-between items-center"
+            >
+                <h3 class="text-xl font-black text-gray-900">
+                    Importar Clientes
+                </h3>
+                <button
+                    type="button"
+                    class="close-modal bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200"
+                    ><svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"></path></svg
+                    ></button
+                >
+            </div>
+            <div class="p-8 space-y-6">
+                <div
+                    class="bg-blue-50 rounded-2xl p-4 border border-blue-100 text-sm text-blue-800"
+                >
+                    <p class="font-bold flex items-center gap-2">
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            ><path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            ></path></svg
+                        >
+                        Formato Requerido (CSV)
+                    </p>
+                    <p class="mt-1 opacity-80">
+                        El archivo debe tener las cabeceras: <code
+                            >nombre, direccion, barrio, telefono</code
+                        >.
+                    </p>
+                </div>
+
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Archivo CSV</label
+                    >
+                    <input
+                        type="file"
+                        id="csvFile"
+                        accept=".csv"
+                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Asignar a Vendedor (Opcional)</label
+                    >
+                    <div class="relative">
+                        <select
+                            id="importVendedor"
+                            class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium appearance-none transition-colors"
+                        >
+                            <option value="">-- Sin Asignar / Mixto --</option>
+                            {
+                                sellerList.map((s: any) => (
+                                    <option value={s.id}>{s.nombre}</option>
+                                ))
+                            }
+                        </select>
+                        <div
+                            class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                ><path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path></svg
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="p-8 border-t border-gray-100 bg-gray-50 rounded-b-[2.5rem] flex justify-end gap-3"
+            >
+                <button
+                    type="button"
+                    class="close-modal bg-white border border-gray-200 text-gray-600 font-bold px-6 h-12 rounded-[2.5rem] hover:bg-gray-50"
+                    >Cancelar</button
+                >
+                <button
+                    type="button"
+                    id="processImportBtn"
+                    class="bg-indigo-600 text-white font-bold px-8 h-12 rounded-[2.5rem] hover:bg-indigo-500 shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:grayscale"
+                    >Importar</button
+                >
+            </div>
+        </form>
+    </dialog>
+</AdminLayout>
+
+<script>
+    import { supabase } from "../../lib/supabase";
+
+    // --- Search Logic ---
+    const searchInput = document.getElementById(
+        "tableSearch",
+    ) as HTMLInputElement;
+    const tableBody = document.getElementById("customerTableBody");
+
+    searchInput?.addEventListener("input", (e) => {
+        const term = (e.target as HTMLInputElement).value.toLowerCase();
+        const rows = tableBody?.querySelectorAll("tr");
+        rows?.forEach((row) => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(term) ? "" : "none";
+        });
+    });
+
+    // --- Modal Logic ---
+    const createModal = document.getElementById(
+        "createModal",
+    ) as HTMLDialogElement;
+    const importModal = document.getElementById(
+        "importModal",
+    ) as HTMLDialogElement;
+
+    // Openers
+    document
+        .getElementById("openCreateModal")
+        ?.addEventListener("click", () => createModal?.showModal());
+    document
+        .getElementById("openImportModal")
+        ?.addEventListener("click", () => importModal?.showModal());
+
+    // Closers
+    document.querySelectorAll(".close-modal").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            createModal?.close();
+            importModal?.close();
+        });
+    });
+
+    // --- 1. Create Logic ---
+    document
+        .getElementById("saveNewBtn")
+        ?.addEventListener("click", async (e) => {
+            const btn = e.target as HTMLButtonElement;
+            btn.textContent = "Guardando...";
+            btn.disabled = true;
+
+            const nombre = (
+                document.getElementById("newNombre") as HTMLInputElement
+            ).value;
+            const contacto = (
+                document.getElementById("newContacto") as HTMLInputElement
+            ).value;
+            const direccion = (
+                document.getElementById("newDireccion") as HTMLInputElement
+            ).value;
+            const barrio = (
+                document.getElementById("newBarrio") as HTMLInputElement
+            ).value;
+            const telefono = (
+                document.getElementById("newTelefono") as HTMLInputElement
+            ).value;
+            const vendedorId =
+                (document.getElementById("newVendedor") as HTMLSelectElement)
+                    .value || null;
+
+            // Strict Pre-flight Validation
+            if (!nombre || !direccion || !barrio || !telefono) {
+                alert(
+                    "Todos los campos obligatorios (marcado con *) deben ser diligenciados:\n- Nombre\n- Dirección\n- Barrio\n- Teléfono",
+                );
+                btn.disabled = false;
+                btn.textContent = "Guardar";
+                return;
+            }
+
+            // Geolocation Helper
+            const getPosition = () => {
+                return new Promise<{ lat: number | null; lng: number | null }>(
+                    (resolve) => {
+                        if (!navigator.geolocation) {
+                            resolve({ lat: null, lng: null });
+                            return;
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                resolve({
+                                    lat: pos.coords.latitude,
+                                    lng: pos.coords.longitude,
+                                });
+                            },
+                            (err) => {
+                                console.warn(
+                                    "Geolocation denied or error:",
+                                    err,
+                                );
+                                resolve({ lat: null, lng: null });
+                            },
+                            { timeout: 5000 },
+                        );
+                    },
+                );
+            };
+
+            const { lat, lng } = await getPosition();
+
+            // Construct payload strictly matching schema
+            const payload = {
+                nombre_comercial: nombre,
+                nombre_contacto: contacto,
+                direccion: direccion,
+                barrio: barrio,
+                telefono: telefono,
+                vendedor_id: vendedorId,
+                latitud: lat,
+                longitud: lng,
+            };
+
+            console.log("Sending to DB:", payload);
+
+            try {
+                // 1. Insert without 'status' to let DB default handle it (avoids cache issues)
+                const { error } = await supabase
+                    .from("clientes")
+                    .insert(payload);
+
+                if (error) throw error;
+
+                alert("Cliente creado exitosamente");
+                window.location.reload();
+            } catch (err: any) {
+                console.error("Error al crear cliente:", err);
+
+                // 3. Validation & Recovery Strategy
+                // Check for common schema mismatch errors (column not found) or connection issues
+                const errMsg = err.message || JSON.stringify(err);
+                if (
+                    errMsg.toLowerCase().includes("column") ||
+                    errMsg.includes("404") ||
+                    errMsg.toLowerCase().includes("does not exist")
+                ) {
+                    alert(
+                        "Error de sincronización con la base de datos (Columna no encontrada o 404). \n\nPor favor, refresca la página e intenta nuevamente.\n\nDetalle: " +
+                            errMsg,
+                    );
+                } else {
+                    alert("Error al guardar: " + errMsg);
+                }
+
+                btn.disabled = false;
+                btn.textContent = "Guardar";
+            }
+        });
+
+    // --- 2. Import Logic (Simple CSV Parser) ---
+    document
+        .getElementById("processImportBtn")
+        ?.addEventListener("click", async (e) => {
+            const btn = e.target as HTMLButtonElement;
+            const fileInput = document.getElementById(
+                "csvFile",
+            ) as HTMLInputElement;
+            const sellerSelect = document.getElementById(
+                "importVendedor",
+            ) as HTMLSelectElement;
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Por favor selecciona un archivo CSV");
+                return;
+            }
+
+            btn.textContent = "Procesando...";
+            btn.disabled = true;
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async (event) => {
+                const text = event.target?.result as string;
+                if (!text) return;
+
+                // 1. Sanitización Inicial (BOM + Normalización de Líneas)
+                const cleanText = text
+                    .replace(/^\uFEFF/, "")
+                    .replace(/\r\n/g, "\n")
+                    .replace(/\r/g, "\n");
+                const lines = cleanText
+                    .split("\n")
+                    .filter((line) => line.trim().length > 0);
+
+                if (lines.length === 0) {
+                    alert("El archivo CSV está vacío.");
+                    btn.disabled = false;
+                    btn.textContent = "Importar";
+                    return;
+                }
+
+                // 2. Detectar Delimitador (Coma vs Punto y Coma)
+                const firstLine = lines[0];
+                const delimiter = firstLine.includes(";") ? ";" : ",";
+
+                // 3. Normalizar Cabeceras
+                // Regla: Lowercase, Trim, Espacios -> Guiones Bajos
+                const headers = firstLine.split(delimiter).map(
+                    (h) =>
+                        h
+                            .toLowerCase()
+                            .trim()
+                            .replace(/\s+/g, "_")
+                            .replace(/["]/g, ""), // Remove quotes from headers if present
+                );
+
+                console.log("Cabeceras detectadas:", headers);
+
+                // 4. Validación de Columnas
+                // Aceptamos 'nombre' o 'nombre_comercial'
+                const hasName =
+                    headers.includes("nombre") ||
+                    headers.includes("nombre_comercial");
+
+                // Optional but good to check
+                const hasBarrio = headers.includes("barrio");
+                const hasContacto =
+                    headers.includes("contacto") ||
+                    headers.includes("nombre_contacto");
+
+                if (!hasName) {
+                    console.table(headers);
+                    alert(
+                        "Error: No se encontró la columna 'Nombre' o 'Nombre Comercial'. Revisa la consola (F12) para ver las cabeceras detectadas.",
+                    );
+                    btn.disabled = false;
+                    btn.textContent = "Importar";
+                    return;
+                }
+
+                const rowsToInsert = [];
+                const selectedSellerId = sellerSelect.value || null;
+                let ignoredCount = 0;
+
+                // 5. Procesar Filas
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i];
+                    // Handle quoted values vaguely correct for simple CSVs, or just simple split
+                    // For robustness with "Latam" CSVs usually simple split is enough if no internal commas/semicolons
+                    const cols = line
+                        .split(delimiter)
+                        .map((c) => c.trim().replace(/^"|"$/g, ""));
+
+                    const rowData: any = {
+                        // status: "activo", // Removed to use DB default
+                        vendedor_id: selectedSellerId,
+                    };
+
+                    let validRow = false;
+
+                    headers.forEach((h, idx) => {
+                        const val = cols[idx];
+                        if (!val) return;
+
+                        if (h === "nombre" || h === "nombre_comercial") {
+                            rowData.nombre_comercial = val;
+                            validRow = true;
+                        } else if (h === "direccion") {
+                            rowData.direccion = val;
+                        } else if (h === "barrio") {
+                            rowData.barrio = val; // Map explicit barrio column
+                        } else if (
+                            h === "contacto" ||
+                            h === "nombre_contacto"
+                        ) {
+                            rowData.nombre_contacto = val;
+                        } else if (h === "telefono" || h === "celular")
+                            rowData.telefono = val;
+                        else if (h === "email" || h === "correo")
+                            rowData.email = val;
+                    });
+
+                    if (
+                        validRow &&
+                        rowData.nombre_comercial &&
+                        rowData.direccion
+                    ) {
+                        rowsToInsert.push(rowData);
+                    } else {
+                        ignoredCount++;
+                    }
+                }
+
+                if (rowsToInsert.length > 0) {
+                    console.log("Sending Bulk to DB:", rowsToInsert);
+                    try {
+                        const { error } = await supabase
+                            .from("clientes")
+                            .insert(rowsToInsert);
+
+                        if (error) throw error;
+
+                        alert(
+                            `Proceso Finalizado.\n\n✅ Se cargaron ${rowsToInsert.length} clientes exitosamente.\n⚠️ ${ignoredCount} registros fueron ignorados por estar incompletos (Falta Nombre o Dirección).`,
+                        );
+                        window.location.reload();
+                    } catch (err: any) {
+                        console.error("Error al importar clientes:", err);
+                        const errMsg = err.message || JSON.stringify(err);
+
+                        if (
+                            errMsg.toLowerCase().includes("column") ||
+                            errMsg.includes("404") ||
+                            errMsg.toLowerCase().includes("does not exist")
+                        ) {
+                            alert(
+                                "Error de sincronización con la base de datos (Columna no encontrada o 404). \n\nPor favor, refresca la página. \n\nDetalle: " +
+                                    errMsg,
+                            );
+                        } else {
+                            alert("Error de Base de Datos: " + errMsg);
+                        }
+                    }
+                } else {
+                    alert(
+                        "No se pudieron extraer datos válidos. Verifica el formato del CSV.",
+                    );
+                }
+
+                btn.disabled = false;
+                btn.textContent = "Importar";
+            };
+
+            reader.readAsText(file);
+        });
+</script>
+
+<style>
+    dialog::backdrop {
+        animation: fade-in 0.2s ease-out;
+    }
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+</style>

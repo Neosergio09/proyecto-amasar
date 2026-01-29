@@ -1,0 +1,316 @@
+---
+import VendedorLayout from "../../layouts/VendedorLayout.astro";
+import { getSupabaseServer } from "../../lib/supabase";
+import type { Client } from "../../types/database";
+
+// 1. Auth & Data Fetching
+const supabase = await getSupabaseServer(Astro.cookies);
+const {
+    data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) {
+    return Astro.redirect("/admin/login");
+}
+
+// Fetch Clientes
+// Idealmente: .eq('vendedor_id', user.id) si existiera esa relación
+const { data: clientes, error } = await supabase
+    .from("clientes")
+    .select("*")
+    .order("nombre_comercial");
+
+if (error) {
+    console.error("Error fetching clientes:", error);
+}
+
+// Client-side filtering simulation (since we fetch all for now, or could filter in query)
+const allClients = clientes || [];
+
+// Helper for inactivity (90 days)
+const isInactive = (dateStr: string | null | undefined) => {
+    if (!dateStr) return false;
+    const last = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - last.getTime();
+    const days = diff / (1000 * 3600 * 24);
+    return days > 90;
+};
+---
+
+<VendedorLayout title="Mis Clientes | Amasar Go">
+    <div class="min-h-screen bg-gray-50 pb-24">
+        <!-- Header Sticky -->
+        <header
+            class="sticky top-0 z-30 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 px-6 py-4 rounded-b-[2rem]"
+        >
+            <div class="flex items-center justify-between mb-4">
+                <a
+                    href="/vendedores"
+                    class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 19l-7-7 7-7"></path></svg
+                    >
+                </a>
+                <h1 class="text-xl font-black text-gray-900 tracking-tight">
+                    Mis Clientes
+                </h1>
+
+                <!-- New Customer Button -->
+                <a
+                    href="/vendedores/clientes/nuevo"
+                    class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white shadow-lg shadow-blue-200 hover:bg-blue-500 transition-all active:scale-95"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 4v16m8-8H4"></path></svg
+                    >
+                </a>
+            </div>
+
+            <!-- Buscador -->
+            <div class="relative">
+                <input
+                    type="search"
+                    id="clientSearch"
+                    placeholder="Buscar cliente..."
+                    class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 rounded-2xl text-base outline-none transition-all placeholder-gray-400"
+                />
+                <svg
+                    class="w-5 h-5 text-gray-400 absolute left-4 top-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex gap-2 mt-4 overflow-x-auto no-scrollbar pb-1">
+                <button
+                    id="filterActive"
+                    class="filter-btn active px-4 py-2 bg-gray-900 text-white rounded-full text-xs font-bold whitespace-nowrap transition-colors"
+                    >Activos</button
+                >
+                <button
+                    id="filterAll"
+                    class="filter-btn px-4 py-2 bg-white text-gray-500 border border-gray-100 rounded-full text-xs font-bold whitespace-nowrap transition-colors"
+                    >Todos</button
+                >
+            </div>
+        </header>
+
+        <!-- Lista de Clientes -->
+        <main class="p-4 space-y-3 mt-2" id="clientListContainer">
+            {
+                allClients.map((cliente: any) => {
+                    const needsRecovery = isInactive(cliente.ultima_compra_at);
+                    const isActive =
+                        cliente.status === "activo" || !cliente.status;
+
+                    return (
+                        <button
+                            class="client-card w-full text-left bg-white p-4 rounded-[1.5rem] shadow-sm border border-gray-100 hover:shadow-md active:scale-98 transition-all group relative overflow-hidden"
+                            data-id={cliente.id}
+                            data-nombre={cliente.nombre_comercial}
+                            data-status={isActive ? "activo" : "inactivo"}
+                        >
+                            {needsRecovery && (
+                                <div class="absolute top-0 right-0 bg-orange-100 text-orange-600 text-[10px] font-bold px-3 py-1 rounded-bl-xl border-l border-b border-orange-50">
+                                    Recuperar
+                                </div>
+                            )}
+                            {!isActive && !needsRecovery && (
+                                <div class="absolute top-0 right-0 bg-gray-100 text-gray-500 text-[10px] font-bold px-3 py-1 rounded-bl-xl">
+                                    Inactivo
+                                </div>
+                            )}
+
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 flex items-center justify-center font-bold text-lg group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:text-white transition-all">
+                                    {cliente.nombre_comercial
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-gray-900 text-base leading-tight">
+                                        {cliente.nombre_comercial}
+                                    </h3>
+                                    <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                        <svg
+                                            class="w-3 h-3"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <>
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                                />
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                                />
+                                            </>
+                                        </svg>
+                                        {cliente.direccion || "Sin dirección"}
+                                    </p>
+                                </div>
+                                <div class="text-gray-300">
+                                    <svg
+                                        class="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M9 5l7 7-7 7"
+                                        />
+                                    </svg>
+                                </div>
+                            </div>
+                        </button>
+                    );
+                })
+            }
+
+            {
+                allClients.length === 0 && (
+                    <div class="text-center py-12">
+                        <p class="text-gray-500">
+                            No tienes clientes asignados.
+                        </p>
+                    </div>
+                )
+            }
+
+            <div id="noResults" class="hidden text-center py-12">
+                <p class="text-gray-500">No se encontraron clientes.</p>
+            </div>
+        </main>
+    </div>
+</VendedorLayout>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.getElementById("clientSearch");
+        const cards = document.querySelectorAll(".client-card");
+        const noResults = document.getElementById("noResults");
+        const filterActiveBtn = document.getElementById("filterActive");
+        const filterAllBtn = document.getElementById("filterAll");
+
+        let currentFilter = "activo"; // 'activo' | 'todos'
+
+        // Helper: Aplicar Filtros (Search + Status)
+        const applyFilters = () => {
+            const term = (searchInput as HTMLInputElement).value.toLowerCase();
+            let visibleCount = 0;
+
+            cards.forEach((el) => {
+                const card = el as HTMLElement;
+                const name = (card.dataset.nombre || "").toLowerCase();
+                const status = card.dataset.status;
+
+                const matchesSearch = name.includes(term);
+                const matchesStatus =
+                    currentFilter === "todos" || status === "activo";
+
+                if (matchesSearch && matchesStatus) {
+                    card.style.display = "block";
+                    visibleCount++;
+                } else {
+                    card.style.display = "none";
+                }
+            });
+
+            if (noResults)
+                noResults.classList.toggle("hidden", visibleCount > 0);
+        };
+
+        // 1. Evento Search
+        searchInput?.addEventListener("input", applyFilters);
+
+        // 2. Evento Filter Tabs
+        filterActiveBtn?.addEventListener("click", () => {
+            currentFilter = "activo";
+            filterActiveBtn.classList.replace("bg-white", "bg-gray-900");
+            filterActiveBtn.classList.replace("text-gray-500", "text-white");
+            filterActiveBtn.classList.remove("border", "border-gray-100");
+
+            filterAllBtn?.classList.replace("bg-gray-900", "bg-white");
+            filterAllBtn?.classList.replace("text-white", "text-gray-500");
+            filterAllBtn?.classList.add("border", "border-gray-100");
+
+            applyFilters();
+        });
+
+        filterAllBtn?.addEventListener("click", () => {
+            currentFilter = "todos";
+            filterAllBtn.classList.replace("bg-white", "bg-gray-900");
+            filterAllBtn.classList.replace("text-gray-500", "text-white");
+            filterAllBtn.classList.remove("border", "border-gray-100");
+
+            filterActiveBtn?.classList.replace("bg-gray-900", "bg-white");
+            filterActiveBtn?.classList.replace("text-white", "text-gray-500");
+            filterActiveBtn?.classList.add("border", "border-gray-100");
+
+            applyFilters();
+        });
+
+        // 3. Selección de Cliente
+        cards.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const card = btn as HTMLElement;
+                const cliente = {
+                    id: card.dataset.id,
+                    nombre_comercial: card.dataset.nombre,
+                };
+
+                // Guardar en Session Handling Local
+                localStorage.setItem(
+                    "active_customer",
+                    JSON.stringify(cliente),
+                );
+
+                // Feedback visual antes de redirigir
+                card.classList.add("ring-2", "ring-blue-500", "bg-blue-50");
+
+                setTimeout(() => {
+                    window.location.href = "/vendedores";
+                }, 150);
+            });
+        });
+
+        // Run initial filter
+        applyFilters();
+    });
+</script>
