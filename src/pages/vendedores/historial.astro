@@ -12,118 +12,174 @@ if (!user) {
     return Astro.redirect("/admin/login");
 }
 
-// 2. Fetch My Orders (Restrict to Seller)
+// 2. Fetch My Orders (Restrict to Seller) with Customer Data
 const { data: pedidos, error } = await supabase
     .from("pedidos")
-    .select("*")
+    .select("*, clientes(nombre_comercial, telefono)")
     .eq("vendedor_id", user.id)
-    .order("creado_en", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(50);
 
 if (error) console.error("Error fetching pedidos:", error.message);
 
-const estadosLogistica = [
-    "Preparación",
-    "En horno",
-    "Empacado",
-    "En camino",
-    "Entregado",
-    "Cancelado"
-];
+// 3. Calculate Daily Summary
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const todaysOrders = (pedidos || []).filter((p) => {
+    const pDate = new Date(p.created_at);
+    pDate.setHours(0, 0, 0, 0);
+    return pDate.getTime() === today.getTime();
+});
+
+const todayTotal = todaysOrders.reduce((acc, curr) => acc + (curr.total || 0), 0);
+const todayCount = todaysOrders.length;
+
+const estadosLogistica = {
+    "Preparación": "bg-blue-50 text-blue-600 border-blue-100",
+    "En horno": "bg-indigo-50 text-indigo-600 border-indigo-100",
+    "Empacado": "bg-purple-50 text-purple-600 border-purple-100",
+    "En camino": "bg-orange-50 text-orange-600 border-orange-100",
+    "Entregado": "bg-green-50 text-green-600 border-green-100",
+    "Cancelado": "bg-red-50 text-red-600 border-red-100",
+};
 ---
 
 <VendedorLayout title="Mis Pedidos | Amasar Go">
     <div class="min-h-screen bg-gray-50 pb-24">
          <!-- Header -->
         <header
-            class="sticky top-0 z-30 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 px-6 py-4 rounded-b-[2rem] flex items-center justify-between"
+            class="sticky top-0 z-30 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 px-6 py-4 rounded-b-[2rem] mb-6"
         >
-             <button
-                onclick="window.history.back()"
-                class="p-2 rounded-full hover:bg-gray-100 transition-colors"
-            >
-                <svg
-                    class="w-6 h-6 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    ><path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"></path></svg
+            <div class="flex items-center justify-between">
+                <button
+                    onclick="window.history.back()"
+                    class="p-2 rounded-full hover:bg-gray-100 transition-colors"
                 >
-            </button>
-            <h1 class="text-lg font-black text-gray-900 tracking-tight">
-                Historial de Pedidos
-            </h1>
-            <div class="w-10"></div>
+                    <svg
+                        class="w-6 h-6 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 19l-7-7 7-7"></path></svg
+                    >
+                </button>
+                <h1 class="text-xl font-black text-gray-900 tracking-tight">
+                    Historial
+                </h1>
+                <div class="w-10"></div>
+            </div>
+
+            <!-- Daily Summary -->
+            <div class="mt-6 flex gap-4">
+                <div class="flex-1 bg-gray-900 rounded-2xl p-4 text-white shadow-lg shadow-gray-200">
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Ventas Hoy</p>
+                    <p class="text-2xl font-black">${todayTotal.toLocaleString('es-CO')}</p>
+                </div>
+                <div class="w-24 bg-white border border-gray-100 rounded-2xl p-4 flex flex-col justify-center items-center shadow-sm">
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Pedidos</p>
+                    <p class="text-2xl font-black text-gray-900">{todayCount}</p>
+                </div>
+            </div>
         </header>
 
-        <main class="p-4 space-y-4">
+        <main class="px-4 space-y-4">
             {
                 !pedidos || pedidos.length === 0 ? (
-                    <div class="text-center py-20 text-gray-500">
-                        No has realizado pedidos aún.
+                    <div class="text-center py-20">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
+                            🥖
+                        </div>
+                        <h3 class="text-gray-900 font-bold text-lg">Sin ventas hoy</h3>
+                        <p class="text-gray-500 mt-2">¡A darle con toda! Tu próxima venta está cerca.</p>
+                        <a href="/vendedores" class="inline-block mt-6 bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all">
+                            Nueva Venta
+                        </a>
                     </div>
                 ) : (
-                    pedidos.map((ped) => (
-                        <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-5 overflow-hidden relative group">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-black uppercase px-2 py-1 rounded-lg mb-1">
-                                        {ped.tag_rastreo}
-                                    </span>
-                                    <h3 class="font-bold text-gray-900 leading-tight">
-                                        {ped.cliente_nombre}
-                                    </h3>
-                                    <p class="text-xs text-gray-400 mt-0.5">
-                                        {new Date(ped.creado_en).toLocaleDateString('es-CO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                </div>
-                                <div class={`text-[10px] font-bold uppercase px-3 py-1 rounded-full border ${
-                                    ped.estado === 'Entregado' ? 'bg-green-50 text-green-600 border-green-100' : 
-                                    ped.estado === 'Cancelado' ? 'bg-red-50 text-red-600 border-red-100' :
-                                    'bg-orange-50 text-orange-600 border-orange-100'
-                                }`}>
-                                    {ped.estado}
-                                </div>
-                            </div>
-
-                            <div class="bg-gray-50 rounded-xl p-3 mb-4 space-y-1">
-                                {(ped.detalles || []).map((item: any) => (
-                                    <div class="flex justify-between text-xs text-gray-600">
-                                        <span>{item.qty}x {item.visualName || item.name}</span>
-                                        <span class="font-bold">${(item.price * item.qty).toLocaleString()}</span>
+                    pedidos.map((ped) => {
+                         const clienteName = ped.clientes?.nombre_comercial || ped.cliente_nombre || "Cliente General";
+                         const clientePhone = ped.clientes?.telefono || ""; // Get phone from relation
+                         const badgeClass = estadosLogistica[ped.estado] || "bg-gray-50 text-gray-600 border-gray-100";
+                         
+                         return (
+                            <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-5 overflow-hidden relative group transition-all hover:shadow-md">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <span class="inline-block bg-gray-50 text-gray-400 text-[10px] font-black uppercase px-2 py-1 rounded-lg mb-1 tracking-wider">
+                                            {ped.tag_rastreo}
+                                        </span>
+                                        <h3 class="font-bold text-gray-900 leading-tight text-lg">
+                                            {clienteName}
+                                        </h3>
+                                        <p class="text-xs text-gray-400 mt-1 font-medium">
+                                            {new Date(ped.created_at).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })} • {new Date(ped.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
                                     </div>
-                                ))}
-                                <div class="border-t border-gray-200 mt-2 pt-2 flex justify-between text-sm font-black text-gray-900">
-                                    <span>Total</span>
-                                    <span>${(ped.total || 0).toLocaleString()}</span>
+                                    <div class={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full border ${badgeClass}`}>
+                                        {ped.estado}
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 rounded-2xl p-4 mb-4 space-y-2">
+                                    {(ped.detalles || []).slice(0, 3).map((item: any) => (
+                                        <div class="flex justify-between text-xs text-gray-600 font-medium">
+                                            <span>{item.qty}x {item.visualName || item.name}</span>
+                                            <span class="font-bold text-gray-400">${(item.price * item.qty).toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                    {(ped.detalles || []).length > 3 && (
+                                        <p class="text-[10px] text-center text-gray-400 italic pt-1">
+                                            + {(ped.detalles || []).length - 3} productos más...
+                                        </p>
+                                    )}
+                                    <div class="border-t border-gray-200 mt-2 pt-3 flex justify-between text-sm font-black text-gray-900">
+                                        <span>Total</span>
+                                        <span>${(ped.total || 0).toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    {/* Re-send WhatsApp Button */}
+                                    <button
+                                        class="resend-wa col-span-2 bg-green-50 text-green-700 font-bold text-sm py-3.5 rounded-xl hover:bg-green-100 transition-colors flex items-center justify-center gap-2 border border-green-100"
+                                        data-phone={clientePhone}
+                                        data-tag={ped.tag_rastreo}
+                                        data-client={clienteName}
+                                        data-items={JSON.stringify(ped.detalles || [])}
+                                        data-total={ped.total}
+                                    >
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"></path></svg>
+                                        Enviar Recibo
+                                    </button>
+
+                                    {ped.estado !== 'Cancelado' && ped.estado !== 'Entregado' && (
+                                        <>
+                                            <button
+                                                class="edit-order flex-1 bg-white border border-gray-200 text-gray-600 font-bold text-xs py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                                                data-id={ped.id}
+                                                data-detalles={JSON.stringify(ped.detalles || [])}
+                                            >
+                                                ✏️ Editar
+                                            </button>
+                                            <button
+                                                class="cancel-order flex-1 bg-white border border-red-100 text-red-500 font-bold text-xs py-3 rounded-xl hover:bg-red-50 transition-colors"
+                                                data-id={ped.id}
+                                                data-detalles={JSON.stringify(ped.detalles || [])}
+                                            >
+                                                🚫 Cancelar
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
-
-                            <!-- Actions (Only if not Cancelled or Delivered) -->
-                            {ped.estado !== 'Cancelado' && ped.estado !== 'Entregado' && (
-                                <div class="flex gap-2">
-                                    <button
-                                        class="edit-order flex-1 bg-blue-50 text-blue-600 font-bold text-xs py-3 rounded-xl hover:bg-blue-100 transition-colors"
-                                        data-id={ped.id}
-                                        data-detalles={JSON.stringify(ped.detalles || [])}
-                                    >
-                                        ✏️ Editar
-                                    </button>
-                                    <button
-                                        class="cancel-order flex-1 bg-red-50 text-red-600 font-bold text-xs py-3 rounded-xl hover:bg-red-100 transition-colors"
-                                        data-id={ped.id}
-                                        data-detalles={JSON.stringify(ped.detalles || [])}
-                                    >
-                                        🚫 Cancelar
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ))
+                        )
+                    })
                 )
             }
         </main>
@@ -150,10 +206,51 @@ const estadosLogistica = [
 <script>
     import { supabase } from "../../lib/supabase";
 
-    // Reusing the exact same logic logic for Edit/Cancel
-    // This could be extracted to a shared component/script, but for speed we duplicate the lightweight logic.
-    
     document.addEventListener("DOMContentLoaded", () => {
+         // --- WhatsApp Re-send Logic ---
+         document.querySelectorAll(".resend-wa").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const phoneRaw = btn.getAttribute("data-phone") || "";
+                const tag = btn.getAttribute("data-tag");
+                const clientName = btn.getAttribute("data-client");
+                const items = JSON.parse(btn.getAttribute("data-items") || "[]");
+                const total = parseInt(btn.getAttribute("data-total") || "0");
+                
+                // 1. Phone Sanitization
+                const clean = phoneRaw.replace(/\D/g, "");
+                const phone = clean.length > 0 ? (clean.startsWith('57') ? clean : '57' + clean) : "";
+
+                if (!phone) {
+                    alert("Este cliente no tiene un número de teléfono válido registrado.");
+                    return;
+                }
+
+                // 2. Build Message
+                const trackingUrl = `${window.location.origin}/rastreo/${tag}`;
+                const itemsList = items
+                    .map((i: any) => `- ${i.qty}x ${i.visualName || i.name} ($${(i.price * i.qty).toLocaleString()})`)
+                    .join("\n");
+
+                const waMessage = 
+`*Pedido Nuevo - Amasar Go* 🚀
+
+*Cliente:* ${clientName}
+*Código de Rastreo:* ${tag}
+
+${itemsList}
+
+*Total: $${total.toLocaleString()}*
+
+Sigue tu pedido aquí: ${trackingUrl}`;
+
+                const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(waMessage)}`;
+                
+                // 3. Open
+                window.open(waLink, "_blank");
+            });
+         });
+
+
          // --- Edit Order Logic ---
         const editModal = document.getElementById("editModal") as HTMLDialogElement;
         const modalContent = document.getElementById("modalContent");
@@ -173,11 +270,17 @@ const estadosLogistica = [
                 oldDetails = JSON.parse(detallesRaw);
                 
                 if (modalContent) {
-                    modalContent.innerHTML = oldDetails.map((item, idx) => `
+                    // Normalize qty vs cantidad
+                    const renderItems = oldDetails.map(item => ({
+                        ...item,
+                        qty: item.cantidad ?? item.qty
+                    }));
+
+                    modalContent.innerHTML = renderItems.map((item, idx) => `
                         <div class="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 item-row" data-idx="${idx}">
                             <div class="flex-1 min-w-0">
                                 <p class="font-bold text-gray-900 truncate text-sm">${item.visualName || item.name}</p>
-                                <p class="text-xs text-gray-500">$${item.price}</p>
+                                <p class="text-xs text-gray-500">$${item.precio || item.price}</p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <input type="number" min="0" value="${item.qty}" class="qty-input w-16 h-10 rounded-xl border-gray-200 text-center font-bold text-sm" />
@@ -198,15 +301,36 @@ const estadosLogistica = [
 
             try {
                 const inputs = modalContent.querySelectorAll(".qty-input");
+                
+                // 1. Capture New State
                 const newDetails = oldDetails.map((item, idx) => {
                     const input = inputs[idx] as HTMLInputElement;
-                    return { ...item, qty: parseInt(input.value) || 0 };
+                    const val = parseInt(input.value) || 0;
+                    return { ...item, qty: val, cantidad: val };
                 });
 
-                // Calculate Deltas & Sync Stock
+                // 2. Pre-Check for Stock Availability (Start of Block)
+                // We need to check if any INCREASE exceeds available stock
+                const stockCheckPromises = newDetails.map(async (newItem, idx) => {
+                    const oldItem = oldDetails[idx];
+                    const oldQty = oldItem.cantidad ?? oldItem.qty ?? 0;
+                    const delta = newItem.qty - oldQty;
+
+                    if (delta > 0) {
+                        const { data: prod } = await supabase.from('productos').select('stock_cantidad, nombre').eq('id', newItem.id).single();
+                        if (prod && delta > prod.stock_cantidad) {
+                            throw new Error(`¡Stock insuficiente para ${prod.nombre}! Solo hay ${prod.stock_cantidad} uds disponibles.`);
+                        }
+                    }
+                });
+                await Promise.all(stockCheckPromises);
+                // (End of Block)
+
+                // 3. Calculate Deltas & Sync Stock
                 const updates = newDetails.map(async (newItem, idx) => {
                     const oldItem = oldDetails[idx];
-                    const delta = newItem.qty - oldItem.qty;
+                    const oldQty = oldItem.cantidad ?? oldItem.qty ?? 0;
+                    const delta = newItem.qty - oldQty;
 
                     if (delta !== 0) {
                         const { data: prod } = await supabase.from('productos').select('stock_cantidad').eq('id', newItem.id).single();
@@ -217,7 +341,7 @@ const estadosLogistica = [
                 });
                 await Promise.all(updates);
 
-                const newTotal = newDetails.reduce((acc, item) => acc + (item.qty * item.price), 0);
+                const newTotal = newDetails.reduce((acc, item) => acc + (item.qty * (item.precio || item.price)), 0);
                 const { error } = await supabase.from('pedidos').update({ detalles: newDetails, total: newTotal }).eq('id', currentEditId);
 
                 if (error) throw error;
@@ -229,7 +353,7 @@ const estadosLogistica = [
             }
         });
 
-        // --- Cancel Logic ---
+        // --- Cancel Logic (Robust) ---
         document.querySelectorAll(".cancel-order").forEach(btn => {
             btn.addEventListener("click", async () => {
                 const id = btn.getAttribute("data-id");
@@ -241,9 +365,12 @@ const estadosLogistica = [
                 
                 try {
                     const restores = details.map(async (item: any) => {
+                         const qty = item.cantidad ?? item.qty ?? 0;
+                         if (qty === 0) return;
+
                         const { data: prod } = await supabase.from('productos').select('stock_cantidad').eq('id', item.id).single();
                         if (prod) {
-                            await supabase.from('productos').update({ stock_cantidad: prod.stock_cantidad + item.qty }).eq('id', item.id);
+                            await supabase.from('productos').update({ stock_cantidad: prod.stock_cantidad + qty }).eq('id', item.id);
                         }
                     });
                     await Promise.all(restores);
@@ -265,5 +392,13 @@ const estadosLogistica = [
     dialog::backdrop {
         background: rgba(0,0,0,0.5);
         backdrop-filter: blur(4px);
+    }
+    /* Hide scrollbar for neatness */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 </style>

@@ -284,11 +284,46 @@ if (!user) {
             (confirmBtn as HTMLButtonElement).disabled = true;
 
             try {
+                // --- A. Pre-flight Stock Check (Improved Batch) ---
+                const itemIds = cartItems.map((i: any) => i.id);
+                const { data: stockCheck, error: stockCheckError } =
+                    await supabase
+                        .from("productos")
+                        .select("id, nombre, stock_cantidad")
+                        .in("id", itemIds);
+
+                if (stockCheckError)
+                    throw new Error(
+                        "Error verificando stock: " + stockCheckError.message,
+                    );
+
+                // Analyze stock
+                const stockMap = new Map(
+                    stockCheck?.map((p) => [p.id, p]) || [],
+                );
+                const errors: string[] = [];
+
+                cartItems.forEach((item: any) => {
+                    const product = stockMap.get(item.id);
+                    if (!product) {
+                        errors.push(`Producto no encontrado: ${item.name}`);
+                    } else if (item.qty > product.stock_cantidad) {
+                        errors.push(
+                            `¡Stock Insuficiente!Solo quedan ${product.stock_cantidad} uds de ${product.nombre} (Pides: ${item.qty})`,
+                        );
+                    }
+                });
+
+                if (errors.length > 0) {
+                    throw new Error(errors.join("\n"));
+                }
+                // --------------------------------------------------
+
                 const year = 2026;
                 const randomId = Math.floor(1000 + Math.random() * 9000);
                 const generatedTag = `AM-${year}-${randomId}`;
 
-                // A. Crear Orden y Descontar Stock (Atómico via RPC)
+                // B. Crear Orden y Descontar Stock (Atómico via RPC)
                 const vendedorId = document
                     .getElementById("meta-data")
                     ?.getAttribute("data-vendedor-id");
@@ -323,17 +358,40 @@ if (!user) {
                 // B. Éxito - Mostrar Modal sin redirect automático
                 localStorage.removeItem("cart_data");
 
-                // 1. Preparar datos para WhatsApp
-                const trackingUrl = `${window.location.origin}/rastreo/${generatedTag}`;
-                const waMessage = `*Pedido Nuevo - Amasar Go* 🚀\n\n*Cliente:* ${cliente.nombre_comercial}\n*Código de Rastreo:* ${generatedTag}\n\n${cartItems.map((i) => `- ${i.qty}x ${i.name} ($${(i.price * i.qty).toLocaleString()})`).join("\n")}\n\n*Total: $${total.toLocaleString()}*\n\nSigue tu pedido aquí: ${trackingUrl}`;
+                // 1. Phone Sanitization (Crucial)
+                let phone = "";
+                if (cliente.telefono) {
+                    const clean = cliente.telefono.replace(/\D/g, "");
+                    // Ensure starts with 57 if it has length (assuming reasonable length for a phone)
+                    if (clean.length > 0) {
+                        phone = clean.startsWith("57") ? clean : "57" + clean;
+                    }
+                }
 
-                // Clean phone number: remove non-digits
-                const phone = cliente.telefono
-                    ? cliente.telefono.replace(/\D/g, "")
-                    : "";
+                // 2. Preparar datos para WhatsApp
+                const trackingUrl = `${window.location.origin}/rastreo/${generatedTag}`;
+
+                const itemsList = cartItems
+                    .map(
+                        (i) =>
+                            `- ${i.qty}x ${i.name} ($${(i.price * i.qty).toLocaleString()})`,
+                    )
+                    .join("\n");
+
+                const waMessage = `*Pedido Nuevo - Amasar Go* 🚀
+
+*Cliente:* ${cliente.nombre_comercial}
+*Código de Rastreo:* ${generatedTag}
+
+${itemsList}
+
+*Total: $${total.toLocaleString()}*
+
+Sigue tu pedido aquí: ${trackingUrl}`;
+
                 const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(waMessage)}`;
 
-                // 2. Configurar acciones del Modal
+                // 3. Configurar acciones del Modal
                 const whatsappBtn = document.getElementById("whatsappBtn");
                 const homeBtn = document.getElementById("homeBtn");
                 const successModal = document.getElementById("successModal");
@@ -342,6 +400,7 @@ if (!user) {
                 );
 
                 if (whatsappBtn) {
+                    // Mobile Deep Linking
                     whatsappBtn.onclick = () => window.open(waLink, "_blank");
                 }
 
@@ -352,7 +411,7 @@ if (!user) {
                     };
                 }
 
-                // 3. UI Transition
+                // 4. UI Transition
                 loadingOverlay?.classList.add("hidden");
                 successModal?.classList.remove("hidden");
                 // Small delay for animation

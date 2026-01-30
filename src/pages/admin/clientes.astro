@@ -18,11 +18,16 @@ const { data: clientes } = await supabase
     )
     .order("nombre_comercial", { ascending: true });
 
-const { data: vendedors } = await supabase
-    .from("perfiles")
-    .select("id, nombre, rol")
-    .eq("rol", "vendedor")
+const { data: vendedors, error: sellerError } = await supabase
+    .from("vendedores") // Changed from 'perfiles' as requested
+    .select("id, nombre")
     .order("nombre", { ascending: true });
+
+if (sellerError) {
+    console.error("Error fetching vendedores:", sellerError);
+} else {
+    console.log("Vendedores fetched (Server):", vendedors?.length);
+}
 
 const clientList = clientes || [];
 const sellerList = vendedors || [];
@@ -119,7 +124,7 @@ const sellerList = vendedors || [];
                         <tr>
                             <th class="px-6 py-5">Cliente</th>
                             <th class="px-6 py-5">Ubicación</th>
-                            <th class="px-6 py-5">Estado</th>
+                            <th class="px-6 py-5">Estado (Visible)</th>
                             <th class="px-6 py-5">Vendedor Asignado</th>
                             <th class="px-6 py-5 text-right">Acciones</th>
                         </tr>
@@ -130,7 +135,9 @@ const sellerList = vendedors || [];
                     >
                         {
                             clientList.map((c: any) => (
-                                <tr class="hover:bg-gray-50/50 transition-colors group">
+                                <tr
+                                    class={`hover:bg-gray-50/50 transition-colors group ${c.status !== "activo" ? "opacity-60 grayscale-[0.5] bg-gray-50" : ""}`}
+                                >
                                     <td class="px-6 py-4">
                                         <div class="font-bold text-gray-900">
                                             {c.nombre_comercial}
@@ -143,26 +150,34 @@ const sellerList = vendedors || [];
                                         {c.direccion || "Sin dirección"}
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span
-                                            class={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${c.status === "activo" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                                        <button
+                                            class={`status-toggle px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 transition-all active:scale-95 ${c.status === "activo" ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}`}
+                                            data-id={c.id}
+                                            data-current={c.status || "activo"}
+                                            title="Clic para cambiar estado"
                                         >
                                             <span
-                                                class={`w-1.5 h-1.5 rounded-full ${c.status === "activo" ? "bg-green-500" : "bg-gray-400"}`}
+                                                class={`w-1.5 h-1.5 rounded-full ${c.status === "activo" ? "bg-green-500" : "bg-gray-500"}`}
                                             />
-                                            {c.status || "activo"}
-                                        </span>
+                                            {c.status === "activo"
+                                                ? "Activo"
+                                                : "Inactivo"}
+                                        </button>
                                     </td>
                                     <td class="px-6 py-4 text-gray-500">
                                         {sellerList.find(
                                             (s: any) => s.id === c.vendedor_id,
                                         )?.nombre || (
-                                            <span class="text-orange-400 italic">
+                                            <span class="text-orange-400 italic text-xs border border-orange-100 bg-orange-50 px-2 py-0.5 rounded-full">
                                                 Sin asignar
                                             </span>
                                         )}
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <button class="text-gray-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors">
+                                        <button
+                                            class="open-edit-btn text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 transition-colors"
+                                            data-client={JSON.stringify(c)}
+                                        >
                                             <svg
                                                 class="w-5 h-5"
                                                 fill="none"
@@ -323,6 +338,36 @@ const sellerList = vendedors || [];
                         </div>
                     </div>
                 </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Estado</label
+                    >
+                    <div class="relative">
+                        <select
+                            id="newStatus"
+                            class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium appearance-none transition-colors"
+                        >
+                            <option value="activo">Activo (Visible)</option>
+                            <option value="inactivo">Inactivo (Oculto)</option>
+                        </select>
+                        <div
+                            class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                ><path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path></svg
+                            >
+                        </div>
+                    </div>
+                </div>
             </div>
             <div
                 class="p-8 border-t border-gray-100 bg-gray-50 rounded-b-[2.5rem] flex justify-end gap-3"
@@ -341,6 +386,178 @@ const sellerList = vendedors || [];
             </div>
         </form>
     </dialog>
+
+    <!-- 2. Edit Modal -->
+    <dialog
+        id="editModal"
+        class="bg-white rounded-[2.5rem] shadow-2xl p-0 w-full max-w-lg backdrop:bg-gray-900/20 backdrop:backdrop-blur-sm open:animate-fade-in text-left"
+    >
+        <form method="dialog" class="flex flex-col h-full max-h-[90vh]">
+            <div
+                class="px-8 py-6 border-b border-gray-100 flex justify-between items-center"
+            >
+                <h3 class="text-xl font-black text-gray-900">Editar Cliente</h3>
+                <button
+                    type="button"
+                    class="close-modal bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200"
+                    ><svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"></path></svg
+                    ></button
+                >
+            </div>
+            <div class="p-8 space-y-4 overflow-y-auto">
+                <input type="hidden" id="editId" />
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Nombre del Negocio <span class="text-red-500">*</span
+                        ></label
+                    >
+                    <input
+                        type="text"
+                        id="editNombre"
+                        required
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                    />
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Nombre de Contacto</label
+                    >
+                    <input
+                        type="text"
+                        id="editContacto"
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                    />
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                            >Dirección</label
+                        >
+                        <input
+                            type="text"
+                            id="editDireccion"
+                            class="w-full bg-gray-50 rounded-2xl h-12 px-4 border-none"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                            >Barrio</label
+                        >
+                        <input
+                            type="text"
+                            id="editBarrio"
+                            class="w-full bg-gray-50 rounded-2xl h-12 px-4 border-none"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Teléfono</label
+                    >
+                    <input
+                        type="text"
+                        id="editTelefono"
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                    />
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Vendedor Asignado</label
+                    >
+                    <div class="relative">
+                        <select
+                            id="editVendedor"
+                            class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium appearance-none transition-colors"
+                        >
+                            <option value="">-- Sin Asignar --</option>
+                            {
+                                sellerList.map((s: any) => (
+                                    <option value={s.id}>{s.nombre}</option>
+                                ))
+                            }
+                        </select>
+                        <div
+                            class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                ><path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path></svg
+                            >
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Estado</label
+                    >
+                    <div class="relative">
+                        <select
+                            id="editStatus"
+                            class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium appearance-none transition-colors"
+                        >
+                            <option value="activo">Activo (Visible)</option>
+                            <option value="inactivo">Inactivo (Oculto)</option>
+                        </select>
+                        <div
+                            class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                ><path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path></svg
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="p-8 border-t border-gray-100 bg-gray-50 rounded-b-[2.5rem] flex justify-end gap-3"
+            >
+                <button
+                    type="button"
+                    class="close-modal bg-white border border-gray-200 text-gray-600 font-bold px-6 h-12 rounded-[2.5rem] hover:bg-gray-50"
+                    >Cancelar</button
+                >
+                <button
+                    type="button"
+                    id="saveEditBtn"
+                    class="bg-blue-600 text-white font-bold px-8 h-12 rounded-[2.5rem] hover:bg-blue-500 shadow-lg shadow-blue-200"
+                    >Actualizar</button
+                >
+            </div>
+        </form>
+    </dialog>
+
+    <!-- 3. Import Modal (Existing) -->
 
     <!-- 2. Import Modal -->
     <dialog
@@ -797,6 +1014,146 @@ const sellerList = vendedors || [];
 
             reader.readAsText(file);
         });
+
+    // --- 3. Edit Logic ---
+    const editModal = document.getElementById("editModal") as HTMLDialogElement;
+
+    // Global function to attach listeners to dynamic elements if needed,
+    // but here we have static elements mainly, except the rows.
+    // Since rows are rendered SSR, simple querySelectorAll works.
+
+    document.querySelectorAll(".open-edit-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const raw = btn.getAttribute("data-client");
+            if (!raw) return;
+            const client = JSON.parse(raw); // Clean parse
+
+            // Populate Fields
+            (document.getElementById("editId") as HTMLInputElement).value =
+                client.id;
+            (document.getElementById("editNombre") as HTMLInputElement).value =
+                client.nombre_comercial;
+            (
+                document.getElementById("editContacto") as HTMLInputElement
+            ).value = client.nombre_contacto || ""; // Handle nulls
+            (
+                document.getElementById("editDireccion") as HTMLInputElement
+            ).value = client.direccion || "";
+            (document.getElementById("editBarrio") as HTMLInputElement).value =
+                client.barrio || "";
+            (
+                document.getElementById("editTelefono") as HTMLInputElement
+            ).value = client.telefono || "";
+            (
+                document.getElementById("editVendedor") as HTMLSelectElement
+            ).value = client.vendedor_id || "";
+            (document.getElementById("editStatus") as HTMLSelectElement).value =
+                client.status || "activo";
+
+            console.log("Edit Open. Client Vendedor:", client.vendedor_id);
+            editModal.showModal();
+        });
+    });
+
+    document
+        .getElementById("saveEditBtn")
+        ?.addEventListener("click", async (e) => {
+            const btn = e.target as HTMLButtonElement;
+            const originalText = btn.textContent;
+            btn.textContent = "Actualizando...";
+            btn.disabled = true;
+
+            const id = (document.getElementById("editId") as HTMLInputElement)
+                .value;
+            const nombre = (
+                document.getElementById("editNombre") as HTMLInputElement
+            ).value;
+            const contacto = (
+                document.getElementById("editContacto") as HTMLInputElement
+            ).value;
+            const direccion = (
+                document.getElementById("editDireccion") as HTMLInputElement
+            ).value;
+            const barrio = (
+                document.getElementById("editBarrio") as HTMLInputElement
+            ).value;
+            const telefono = (
+                document.getElementById("editTelefono") as HTMLInputElement
+            ).value;
+            const vendedorId =
+                (document.getElementById("editVendedor") as HTMLSelectElement)
+                    .value || null;
+            const status = (
+                document.getElementById("editStatus") as HTMLSelectElement
+            ).value;
+
+            // DEBUG: Trace Payload
+            console.log("--- SUBMITTING EDIT ---");
+            console.log("Client ID:", id);
+            console.log("Enviando Vendedor ID:", vendedorId);
+            console.log("Status:", status);
+
+            try {
+                const { data, error } = await supabase
+                    .from("clientes")
+                    .update({
+                        nombre_comercial: nombre,
+                        nombre_contacto: contacto,
+                        direccion: direccion,
+                        barrio: barrio,
+                        telefono: telefono,
+                        vendedor_id: vendedorId,
+                        status: status,
+                    })
+                    .eq("id", id)
+                    .select();
+
+                console.log("Supabase Response:", { data, error });
+
+                if (error) throw error;
+
+                alert("Cliente actualizado correctamente");
+                window.location.reload();
+            } catch (err: any) {
+                console.error("Error updating client:", err);
+                alert("Error al actualizar: " + err.message);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        });
+
+    // --- 4. Quick Status Toggle Logic ---
+    document.querySelectorAll(".status-toggle").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+            e.stopPropagation(); // Avoid triggering row click if any
+
+            const button = btn as HTMLButtonElement;
+            const id = button.dataset.id;
+            const currentStatus = button.dataset.current;
+            const newStatus =
+                currentStatus === "activo" ? "inactivo" : "activo"; // Toggle
+
+            // Optimistic UI Update (optional, but good for UX)
+            // But doing a reload is safer to reflect all changes (opacity etc).
+            // For now, let's do direct update.
+
+            if (!confirm(`¿Cambiar estado a ${newStatus.toUpperCase()}?`))
+                return;
+
+            try {
+                const { error } = await supabase
+                    .from("clientes")
+                    .update({ status: newStatus })
+                    .eq("id", id);
+
+                if (error) throw error;
+
+                window.location.reload();
+            } catch (err: any) {
+                alert("Error cambiando estado: " + err.message);
+            }
+        });
+    });
 </script>
 
 <style>
