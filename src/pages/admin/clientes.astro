@@ -14,23 +14,23 @@ if (!user) return Astro.redirect("/admin/login");
 const { data: clientes } = await supabase
     .from("clientes")
     .select(
-        "id, nombre_comercial, direccion, telefono, status, vendedor_id, ultima_compra_at",
+        "id, nombre_comercial, nombre_contacto, barrio, direccion, telefono, status, vendedor_id, ultima_compra_at",
     )
     .order("nombre_comercial", { ascending: true });
 
-const { data: vendedors, error: sellerError } = await supabase
-    .from("vendedores") // Changed from 'perfiles' as requested
+const { data: vendedores, error: sellerError } = await supabase
+    .from("perfiles") // Correct table name per user instruction
     .select("id, nombre")
     .order("nombre", { ascending: true });
 
 if (sellerError) {
     console.error("Error fetching vendedores:", sellerError);
 } else {
-    console.log("Vendedores fetched (Server):", vendedors?.length);
+    console.log("Total de perfiles encontrados:", vendedores?.length);
 }
 
 const clientList = clientes || [];
-const sellerList = vendedors || [];
+const sellerList = vendedores || [];
 ---
 
 <AdminLayout title="Gestión de Clientes">
@@ -801,6 +801,7 @@ const sellerList = vendedors || [];
                 longitud: lng,
             };
 
+            console.log("Enviando Vendedor ID:", vendedorId);
             console.log("Sending to DB:", payload);
 
             try {
@@ -1050,6 +1051,7 @@ const sellerList = vendedors || [];
             (document.getElementById("editStatus") as HTMLSelectElement).value =
                 client.status || "activo";
 
+            console.log("Cargando datos en modal:", client);
             console.log("Edit Open. Client Vendedor:", client.vendedor_id);
             editModal.showModal();
         });
@@ -1094,21 +1096,25 @@ const sellerList = vendedors || [];
             console.log("Status:", status);
 
             try {
+                const payloadUpdate = {
+                    nombre_comercial: nombre,
+                    nombre_contacto: contacto,
+                    direccion: direccion,
+                    barrio: barrio,
+                    telefono: telefono,
+                    vendedor_id: vendedorId,
+                    status: status,
+                };
+
+                console.log("Payload de actualización:", payloadUpdate);
+
                 const { data, error } = await supabase
                     .from("clientes")
-                    .update({
-                        nombre_comercial: nombre,
-                        nombre_contacto: contacto,
-                        direccion: direccion,
-                        barrio: barrio,
-                        telefono: telefono,
-                        vendedor_id: vendedorId,
-                        status: status,
-                    })
+                    .update(payloadUpdate)
                     .eq("id", id)
                     .select();
 
-                console.log("Supabase Response:", { data, error });
+                console.log("Respuesta Supabase:", { data, error });
 
                 if (error) throw error;
 

@@ -87,16 +87,27 @@ export const onRequest = defineMiddleware(async (context, next) => {
             .eq('id', user.id)
             .single();
 
+        let rol = "";
+
         // MANEJO DE ERRORES CRÍTICOS (Perfil no encontrado)
         if (profileError || !profile) {
-            console.error("⛔ SEGURIDAD: Usuario autenticado sin perfil asociado.", user.id);
-            // Expulsar inmediatamente
-            cookies.delete("sb-access-token", { path: "/" });
-            cookies.delete("sb-refresh-token", { path: "/" });
-            return redirect("/admin/login?error=security_profile_synchro");
-        }
+            console.error("Error de sincronización:", profileError || "Perfil no encontrado en DB");
 
-        const rol = profile.rol;
+            // Fallback: Intentar recuperar rol desde user_metadata
+            const metaRole = user.user_metadata?.role;
+            if (metaRole) {
+                console.warn(`⚠️ Recuperando acceso vía Metadata para usuario: ${user.id} (Rol: ${metaRole})`);
+                locals.user = user;
+                rol = metaRole;
+            } else {
+                console.error("⛔ SEGURIDAD: Usuario autenticado sin perfil asociado y sin metadata.", user.id);
+                cookies.delete("sb-access-token", { path: "/" });
+                cookies.delete("sb-refresh-token", { path: "/" });
+                return redirect("/admin/login?error=security_profile_synchro");
+            }
+        } else {
+            rol = profile.rol;
+        }
 
         // Inyectar usuario y rol en locals para uso en páginas (si aplica)
         locals.user = user;

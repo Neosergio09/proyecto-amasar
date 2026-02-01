@@ -1,0 +1,565 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getSupabaseServer } from "../../lib/supabase";
+
+// 1. Auth & Server Logic
+const supabase = await getSupabaseServer(Astro.cookies);
+const {
+    data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) return Astro.redirect("/admin/login");
+
+// 2. Fetch Inventory
+const { data: materias, error } = await supabase
+    .from("materias_primas")
+    .select("*")
+    .order("nombre", { ascending: true });
+
+if (error) {
+    console.error("Error fetching inventory:", error);
+}
+
+const rawInventory = materias || [];
+// Pre-calculate logic to avoid JSX parsing issues
+const enrichedInventory = rawInventory.map((item: any) => {
+    const stockActual = Number(item.stock_actual);
+    const stockMin = Number(item.stock_minimo);
+    const isLowStock = stockActual <= stockMin;
+
+    // Visualization logic
+    const maxVis = Math.max(stockMin * 3, stockActual * 1.2);
+    const percentage = Math.min((stockActual / maxVis) * 100, 100);
+
+    return {
+        ...item,
+        isLowStock,
+        percentage,
+    };
+});
+---
+
+<AdminLayout title="Inventario de Materia Prima">
+    <div class="space-y-6">
+        <!-- Header -->
+        <div
+            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-[2.5rem] shadow-sm"
+        >
+            <div>
+                <h1 class="text-2xl font-black text-gray-900 tracking-tight">
+                    Materia Prima
+                </h1>
+                <p class="text-gray-500 text-sm mt-1">
+                    Gestiona el stock de tus insumos.
+                </p>
+            </div>
+            <button
+                id="openCreateModal"
+                class="h-12 px-6 rounded-[2.5rem] bg-amber-500 text-white font-bold hover:bg-amber-600 shadow-xl shadow-amber-200 transition-all flex items-center gap-2"
+            >
+                <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"></path></svg
+                >
+                Nuevo Insumo
+            </button>
+        </div>
+
+        <!-- Inventory Table -->
+        <div
+            class="bg-white rounded-[2.5rem] shadow-sm overflow-hidden border border-gray-100"
+        >
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead
+                        class="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider font-bold"
+                    >
+                        <tr>
+                            <th class="px-6 py-5">Insumo</th>
+                            <th class="px-6 py-5">Stock Actual</th>
+                            <th class="px-6 py-5">Mínimo</th>
+                            <th class="px-6 py-5">Última Actualización</th>
+                            <th class="px-6 py-5 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-sm">
+                        {
+                            enrichedInventory.map((item: any) => {
+                                return (
+                                    <tr
+                                        class={`group transition-colors ${item.isLowStock ? "bg-red-50" : "hover:bg-gray-50/50"}`}
+                                    >
+                                        <td class="px-6 py-4">
+                                            <div
+                                                class={`font-bold ${item.isLowStock ? "text-red-700" : "text-gray-900"}`}
+                                            >
+                                                {item.nombre}
+                                            </div>
+                                            <div class="text-xs text-gray-400">
+                                                Unidad: {item.unidad}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 min-w-[200px]">
+                                            <div class="flex justify-between text-xs font-bold mb-1">
+                                                <span
+                                                    class={
+                                                        item.isLowStock
+                                                            ? "text-red-600"
+                                                            : "text-gray-600"
+                                                    }
+                                                >
+                                                    {item.stock_actual}{" "}
+                                                    {item.unidad}
+                                                </span>
+                                            </div>
+                                            <div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                <div
+                                                    class={`h-full rounded-full transition-all duration-500 ${item.isLowStock ? "bg-red-500" : "bg-green-500"}`}
+                                                    style={`width: ${item.percentage}%`}
+                                                />
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-500 font-medium">
+                                            {item.stock_minimo} {item.unidad}
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-400 text-xs">
+                                            {new Date(
+                                                item.ultima_actualizacion,
+                                            ).toLocaleDateString()}{" "}
+                                            {new Date(
+                                                item.ultima_actualizacion,
+                                            ).toLocaleTimeString([], {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <button
+                                                class="open-update-btn text-blue-600 hover:text-blue-800 font-bold text-xs bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors"
+                                                data-item={JSON.stringify(item)}
+                                            >
+                                                Actualizar Stock
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        }
+                    </tbody>
+                </table>
+            </div>
+            {
+                enrichedInventory.length === 0 && (
+                    <div class="p-12 text-center text-gray-400">
+                        No hay materias primas registradas.
+                    </div>
+                )
+            }
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- 1. Create Modal -->
+    <dialog
+        id="createModal"
+        class="bg-white rounded-[2.5rem] shadow-2xl p-0 w-full max-w-lg backdrop:bg-gray-900/20 backdrop:backdrop-blur-sm open:animate-fade-in text-left"
+    >
+        <form method="dialog" class="flex flex-col h-full">
+            <div
+                class="px-8 py-6 border-b border-gray-100 flex justify-between items-center"
+            >
+                <h3 class="text-xl font-black text-gray-900">Nuevo Insumo</h3>
+                <button
+                    type="button"
+                    class="close-modal bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"></path></svg
+                    >
+                </button>
+            </div>
+            <div class="p-8 space-y-4">
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Nombre</label
+                    >
+                    <input
+                        type="text"
+                        id="newNombre"
+                        required
+                        class="w-full bg-gray-50 border-transparent focus:border-amber-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                        placeholder="Ej. Harina de Trigo"
+                    />
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                            >Unidad</label
+                        >
+                        <select
+                            id="newUnidad"
+                            class="w-full bg-gray-50 border-transparent focus:border-amber-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium appearance-none transition-colors"
+                        >
+                            <option value="kg">Kilogramos (kg)</option>
+                            <option value="gr">Gramos (gr)</option>
+                            <option value="lt">Litros (lt)</option>
+                            <option value="unidades">Unidades</option>
+                            <option value="laminas">Láminas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                            >Stock Mínimo</label
+                        >
+                        <input
+                            type="number"
+                            id="newMin"
+                            value="10"
+                            class="w-full bg-gray-50 border-transparent focus:border-amber-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Stock Inicial</label
+                    >
+                    <input
+                        type="number"
+                        id="newStock"
+                        value="0"
+                        class="w-full bg-gray-50 border-transparent focus:border-amber-500 focus:bg-white focus:ring-0 rounded-2xl h-12 px-4 font-medium transition-colors"
+                    />
+                </div>
+            </div>
+            <div
+                class="p-8 border-t border-gray-100 bg-gray-50 rounded-b-[2.5rem] flex justify-end gap-3"
+            >
+                <button
+                    type="button"
+                    class="close-modal bg-white border border-gray-200 text-gray-600 font-bold px-6 h-12 rounded-[2.5rem] hover:bg-gray-50"
+                    >Cancelar</button
+                >
+                <button
+                    type="button"
+                    id="saveNewBtn"
+                    class="bg-amber-500 text-white font-bold px-8 h-12 rounded-[2.5rem] hover:bg-amber-600 shadow-lg shadow-amber-200"
+                    >Guardar</button
+                >
+            </div>
+        </form>
+    </dialog>
+
+    <!-- 2. Update Stock Modal -->
+    <dialog
+        id="updateModal"
+        class="bg-white rounded-[2.5rem] shadow-2xl p-0 w-full max-w-md backdrop:bg-gray-900/20 backdrop:backdrop-blur-sm open:animate-fade-in text-left"
+    >
+        <form method="dialog" class="flex flex-col h-full">
+            <div
+                class="px-8 py-6 border-b border-gray-100 flex justify-between items-center"
+            >
+                <h3 class="text-xl font-black text-gray-900">
+                    Actualizar Stock
+                </h3>
+                <button
+                    type="button"
+                    class="close-modal bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"></path></svg
+                    >
+                </button>
+            </div>
+            <div class="p-8 space-y-6">
+                <input type="hidden" id="updateId" />
+                <div class="bg-blue-50 p-4 rounded-xl">
+                    <p
+                        class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1"
+                    >
+                        ITEM SELECCIONADO
+                    </p>
+                    <p class="text-xl font-black text-blue-900" id="updateName">
+                        ...
+                    </p>
+                    <p class="text-sm text-blue-700 mt-1">
+                        Stock Actual: <span
+                            id="currentStockDisplay"
+                            class="font-bold">0</span
+                        >
+                    </p>
+                </div>
+
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Tipo de Movimiento</label
+                    >
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input
+                                type="radio"
+                                name="moveType"
+                                value="add"
+                                checked
+                                class="peer sr-only"
+                            />
+                            <div
+                                class="h-12 rounded-2xl border-2 border-gray-200 flex items-center justify-center font-bold text-gray-500 peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700 transition-all"
+                            >
+                                + Agregar / Sumar
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input
+                                type="radio"
+                                name="moveType"
+                                value="set"
+                                class="peer sr-only"
+                            />
+                            <div
+                                class="h-12 rounded-2xl border-2 border-gray-200 flex items-center justify-center font-bold text-gray-500 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition-all"
+                            >
+                                = Definir Total
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                        >Cantidad</label
+                    >
+                    <input
+                        type="number"
+                        id="updateAmount"
+                        required
+                        class="w-full bg-gray-50 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 rounded-2xl h-14 px-4 text-2xl font-black text-gray-900 transition-colors"
+                        placeholder="0"
+                    />
+                    <p class="text-xs text-gray-400 mt-2" id="helperText">
+                        Ingresa la cantidad a sumar al stock actual.
+                    </p>
+                </div>
+            </div>
+            <div
+                class="p-8 border-t border-gray-100 bg-gray-50 rounded-b-[2.5rem] flex justify-end gap-3"
+            >
+                <button
+                    type="button"
+                    class="close-modal bg-white border border-gray-200 text-gray-600 font-bold px-6 h-12 rounded-[2.5rem] hover:bg-gray-50"
+                    >Cancelar</button
+                >
+                <button
+                    type="button"
+                    id="saveUpdateBtn"
+                    class="bg-blue-600 text-white font-bold px-8 h-12 rounded-[2.5rem] hover:bg-blue-700 shadow-lg shadow-blue-200"
+                    >Confirmar</button
+                >
+            </div>
+        </form>
+    </dialog>
+</AdminLayout>
+
+<script>
+    import { supabase } from "../../lib/supabase";
+
+    // --- Modals ---
+    const createModal = document.getElementById(
+        "createModal",
+    ) as HTMLDialogElement;
+    const updateModal = document.getElementById(
+        "updateModal",
+    ) as HTMLDialogElement;
+
+    // Open/Close logic
+    document
+        .getElementById("openCreateModal")
+        ?.addEventListener("click", () => createModal.showModal());
+
+    document.querySelectorAll(".close-modal").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            createModal.close();
+            updateModal.close();
+        });
+    });
+
+    // --- 1. Create Logic ---
+    document
+        .getElementById("saveNewBtn")
+        ?.addEventListener("click", async (e) => {
+            const btn = e.target as HTMLButtonElement;
+            btn.textContent = "Guardando...";
+            btn.disabled = true;
+
+            const nombre = (
+                document.getElementById("newNombre") as HTMLInputElement
+            ).value;
+            const unidad = (
+                document.getElementById("newUnidad") as HTMLSelectElement
+            ).value;
+            const stockMin = (
+                document.getElementById("newMin") as HTMLInputElement
+            ).value;
+            const stock = (
+                document.getElementById("newStock") as HTMLInputElement
+            ).value;
+
+            if (!nombre) {
+                alert("El nombre es obligatorio");
+                btn.disabled = false;
+                btn.textContent = "Guardar";
+                return;
+            }
+
+            const { error } = await supabase.from("materias_primas").insert({
+                nombre,
+                unidad,
+                stock_minimo: stockMin,
+                stock_actual: stock,
+            });
+
+            if (error) {
+                console.error(error);
+                alert("Error al guardar");
+            } else {
+                window.location.reload();
+            }
+            btn.disabled = false;
+        });
+
+    // --- 2. Update Logic ---
+    let currentItem: any = null;
+
+    document.querySelectorAll(".open-update-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const raw = btn.getAttribute("data-item");
+            if (!raw) return;
+            currentItem = JSON.parse(raw);
+
+            // Populate Modal
+            (document.getElementById("updateId") as HTMLInputElement).value =
+                currentItem.id;
+            (document.getElementById("updateName") as HTMLElement).innerText =
+                currentItem.nombre;
+            (
+                document.getElementById("currentStockDisplay") as HTMLElement
+            ).innerText = currentItem.stock_actual + " " + currentItem.unidad;
+
+            // Reset fields
+            (
+                document.getElementById("updateAmount") as HTMLInputElement
+            ).value = "";
+
+            updateModal.showModal();
+        });
+    });
+
+    // Helper Text Change
+    document.querySelectorAll('input[name="moveType"]').forEach((radio) => {
+        radio.addEventListener("change", (e) => {
+            const val = (e.target as HTMLInputElement).value;
+            const helper = document.getElementById("helperText");
+            if (val === "add")
+                helper!.innerText =
+                    "Ingresa la cantidad a sumar al stock actual (usa negativo para restar).";
+            else
+                helper!.innerText =
+                    "Este valor reemplazará el stock actual por completo.";
+        });
+    });
+
+    document
+        .getElementById("saveUpdateBtn")
+        ?.addEventListener("click", async (e) => {
+            const btn = e.target as HTMLButtonElement;
+            btn.textContent = "Actualizando...";
+            btn.disabled = true;
+
+            if (!currentItem) return;
+
+            const amount = parseFloat(
+                (document.getElementById("updateAmount") as HTMLInputElement)
+                    .value,
+            );
+            const moveType = (
+                document.querySelector(
+                    'input[name="moveType"]:checked',
+                ) as HTMLInputElement
+            ).value;
+
+            if (isNaN(amount)) {
+                alert("Ingresa un número válido");
+                btn.disabled = false;
+                btn.textContent = "Confirmar";
+                return;
+            }
+
+            let newStock = 0;
+            if (moveType === "add") {
+                newStock = parseFloat(currentItem.stock_actual) + amount;
+            } else {
+                newStock = amount;
+            }
+
+            if (newStock < 0) newStock = 0;
+
+            const { error } = await supabase
+                .from("materias_primas")
+                .update({
+                    stock_actual: newStock,
+                    ultima_actualizacion: new Date(),
+                })
+                .eq("id", currentItem.id);
+
+            if (error) {
+                console.error(error);
+                alert("Error al actualizar");
+                btn.disabled = false;
+                btn.textContent = "Confirmar";
+            } else {
+                window.location.reload();
+            }
+        });
+</script>
+
+<style>
+    dialog::backdrop {
+        animation: fade-in 0.2s ease-out;
+    }
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+</style>
