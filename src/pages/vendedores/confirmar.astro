@@ -355,6 +355,15 @@ if (!user) {
                         rpcData.error || "Error desconocido en transacción",
                     );
 
+                // --- FIX: Force 'Preparación' status immediately ---
+                // The RPC might be defaulting to 'Completado' or similar.
+                // We override it here to ensure correct workflow start.
+                await supabase
+                    .from("pedidos")
+                    .update({ estado: "Preparación" })
+                    .eq("tag_rastreo", generatedTag);
+                // -------------------------------------------------
+
                 // B. Éxito - Mostrar Modal sin redirect automático
                 localStorage.removeItem("cart_data");
 

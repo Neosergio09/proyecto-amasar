@@ -226,7 +226,7 @@ const sellerList = vendedores || [];
                 <h3 class="text-xl font-black text-gray-900">Nuevo Cliente</h3>
                 <button
                     type="button"
-                    class="close-modal bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200"
+                    class="close-modal w-11 h-11 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors"
                     ><svg
                         class="w-5 h-5"
                         fill="none"
@@ -401,7 +401,7 @@ const sellerList = vendedores || [];
                 <h3 class="text-xl font-black text-gray-900">Editar Cliente</h3>
                 <button
                     type="button"
-                    class="close-modal bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200"
+                    class="close-modal w-11 h-11 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors"
                     ><svg
                         class="w-5 h-5"
                         fill="none"
@@ -575,7 +575,7 @@ const sellerList = vendedores || [];
                 </h3>
                 <button
                     type="button"
-                    class="close-modal bg-gray-100 p-2 rounded-full text-gray-500 hover:bg-gray-200"
+                    class="close-modal w-11 h-11 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors"
                     ><svg
                         class="w-5 h-5"
                         fill="none"
@@ -707,6 +707,7 @@ const sellerList = vendedores || [];
     const importModal = document.getElementById(
         "importModal",
     ) as HTMLDialogElement;
+    const editModal = document.getElementById("editModal") as HTMLDialogElement;
 
     // Openers
     document
@@ -717,10 +718,46 @@ const sellerList = vendedores || [];
         ?.addEventListener("click", () => importModal?.showModal());
 
     // Closers
+    // Closers
     document.querySelectorAll(".close-modal").forEach((btn) => {
         btn.addEventListener("click", () => {
             createModal?.close();
             importModal?.close();
+            editModal?.close();
+            console.log("Modal de cliente cerrado");
+
+            // Reset Button States & Forms
+            const saveNewBtn = document.getElementById(
+                "saveNewBtn",
+            ) as HTMLButtonElement;
+            if (saveNewBtn) {
+                saveNewBtn.disabled = false;
+                saveNewBtn.textContent = "Guardar";
+            }
+
+            const saveEditBtn = document.getElementById(
+                "saveEditBtn",
+            ) as HTMLButtonElement;
+            if (saveEditBtn) {
+                saveEditBtn.disabled = false;
+                saveEditBtn.textContent = "Actualizar";
+            }
+
+            const processImportBtn = document.getElementById(
+                "processImportBtn",
+            ) as HTMLButtonElement;
+            if (processImportBtn) {
+                processImportBtn.disabled = false;
+                processImportBtn.textContent = "Importar";
+            }
+
+            // Clear Forms (Edit form is repopulated on open, so we focus on Create/Import)
+            if (createModal && !createModal.open) {
+                (createModal.querySelector("form") as HTMLFormElement)?.reset();
+            }
+            if (importModal && !importModal.open) {
+                (importModal.querySelector("form") as HTMLFormElement)?.reset();
+            }
         });
     });
 
@@ -1019,7 +1056,6 @@ const sellerList = vendedores || [];
         });
 
     // --- 3. Edit Logic ---
-    const editModal = document.getElementById("editModal") as HTMLDialogElement;
 
     // Global function to attach listeners to dynamic elements if needed,
     // but here we have static elements mainly, except the rows.
