@@ -6,7 +6,7 @@ export interface Product {
     precio: number;
     stock_cantidad: number;
     imagen_url: string | null;
-    categoria: string;
+    categoria: 'Galletas' | 'Café' | 'Chocolatería' | 'Jugos' | 'Gelatina' | string;
     destacado: boolean;
 }
 
