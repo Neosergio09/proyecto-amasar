@@ -29,10 +29,10 @@ const { title, description } = Astro.props;
     class="bg-background text-secondary antialiased selection:bg-primary selection:text-white min-h-screen flex flex-col"
   >
     <header
-      class="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-primary/10"
+      class="sticky top-0 z-[100] bg-background/80 backdrop-blur-xl border-b border-primary/10"
     >
       <nav
-        class="max-w-7xl mx-auto px-6 h-20 md:h-24 flex items-center justify-between"
+        class="max-w-7xl mx-auto px-6 h-20 md:h-24 flex items-center justify-between z-[100]"
         aria-label="Navegación principal"
       >
         <div class="relative group flex items-center h-full shrink-0">
@@ -78,7 +78,7 @@ const { title, description } = Astro.props;
               </a>
 
               <ul
-                class="absolute top-full -left-4 w-64 bg-white shadow-2xl rounded-3xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 border border-primary/5 translate-y-2 group-hover:translate-y-0"
+                class="absolute top-full -left-4 w-64 bg-white shadow-2xl rounded-3xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 border border-primary/5 translate-y-2 group-hover:translate-y-0 z-[100]"
                 role="menu"
               >
                 <li role="none">
@@ -185,6 +185,7 @@ const { title, description } = Astro.props;
               >
             </li>
 
+            <!-- 
             <li>
               <a
                 href="/rastreo"
@@ -200,7 +201,8 @@ const { title, description } = Astro.props;
                 </span>
                 Rastreo
               </a>
-            </li>
+            </li> 
+            -->
 
             <li>
               <a href="/ayuda" class="hover:text-primary transition-colors"
