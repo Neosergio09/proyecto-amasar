@@ -1,0 +1,285 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getSupabaseServer } from "../../lib/supabase";
+
+const supabase = await getSupabaseServer(Astro.cookies);
+const {
+    data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) return Astro.redirect("/admin/login");
+
+// Fetch Products that HAVE a recipe
+const { data: productsWithRecipes } = await supabase
+    .from("productos")
+    .select(
+        `
+    id,
+    nombre,
+    recetas!inner(id) 
+  `,
+    )
+    .eq("categoria", "Galletas")
+    .order("nombre");
+
+const productList = productsWithRecipes || [];
+---
+
+<AdminLayout title="Lanzar Producción">
+    <div class="max-w-2xl mx-auto space-y-8">
+        <!-- Hero / Header -->
+        <div class="text-center space-y-4">
+            <div
+                class="inline-flex items-center justify-center p-4 bg-orange-100 text-orange-600 rounded-full mb-4"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-8 w-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                    ></path>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-black text-slate-800">
+                Lanzar Orden de Producción
+            </h1>
+            <p class="text-slate-500 max-w-lg mx-auto">
+                Selecciona el producto y la cantidad a producir. El sistema
+                descontará automáticamente los insumos del inventario.
+            </p>
+        </div>
+
+        <!-- Form Card -->
+        <div
+            class="bg-white p-8 rounded-[2rem] shadow-xl shadow-slate-200 border border-slate-100"
+        >
+            <form id="productionForm" class="space-y-6">
+                <div>
+                    <label
+                        class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2"
+                        >Producto</label
+                    >
+                    <div class="relative">
+                        <select
+                            id="productoSelect"
+                            required
+                            class="w-full bg-slate-50 border-none rounded-xl h-14 px-4 font-bold text-slate-700 focus:ring-2 focus:ring-orange-500 appearance-none cursor-pointer"
+                        >
+                            <option value="">Selecciona un producto...</option>
+                            {
+                                productList.map((p) => (
+                                    <option value={p.id}>{p.nombre}</option>
+                                ))
+                            }
+                        </select>
+                        <div
+                            class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label
+                        class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2"
+                        >Cantidad a Producir</label
+                    >
+                    <input
+                        type="number"
+                        id="cantidadInput"
+                        required
+                        min="1"
+                        placeholder="Ej. 50"
+                        class="w-full bg-slate-50 border-none rounded-xl h-14 px-4 font-bold text-slate-700 focus:ring-2 focus:ring-orange-500"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    id="submitBtn"
+                    class="w-full py-4 bg-orange-500 text-white font-black uppercase tracking-widest rounded-xl hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 hover:shadow-orange-300 transform active:scale-95"
+                >
+                    Ejecutar Producción
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <dialog
+        id="successModal"
+        class="bg-white rounded-[2.5rem] p-0 w-full max-w-md backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm open:animate-fade-in text-center shadow-2xl"
+    >
+        <div class="p-8">
+            <div
+                class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-10 w-10"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-black text-slate-800 mb-2">
+                ¡Producción Registrada!
+            </h3>
+            <p class="text-slate-500 mb-8 text-sm">
+                El stock de los ingredientes ha sido descontado correctamente.
+            </p>
+
+            <div class="space-y-3">
+                <a
+                    id="whatsappBtn"
+                    href="#"
+                    target="_blank"
+                    class="flex items-center justify-center gap-2 w-full py-4 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors shadow-lg shadow-green-200"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.658-.698c.983.586 2.051.968 3.284.972l.004.001c3.177 0 5.765-2.587 5.765-5.766.001-5.632-4.062-5.772-6.251-6.16zM5.838 12.012c.002-3.415 2.78-6.194 6.196-6.194 3.414.004 6.19 2.78 6.191 6.193-.001 3.42-2.779 6.193-6.192 6.193-1.07-.001-2.062-.279-2.909-.731l-3.219.845.859-3.136c-.538-.938-.857-2.022-.858-3.17z"
+                        ></path>
+                    </svg>
+                    Enviar Orden por WhatsApp
+                </a>
+                <button
+                    id="closeModalBtn"
+                    class="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                >
+                    Cerrar y Continuar
+                </button>
+            </div>
+        </div>
+    </dialog>
+</AdminLayout>
+
+<script>
+    const form = document.getElementById("productionForm") as HTMLFormElement;
+    const submitBtn = document.getElementById("submitBtn") as HTMLButtonElement;
+    const successModal = document.getElementById(
+        "successModal",
+    ) as HTMLDialogElement;
+    const whatsappBtn = document.getElementById(
+        "whatsappBtn",
+    ) as HTMLAnchorElement;
+    const closeModalBtn = document.getElementById("closeModalBtn");
+
+    // Change this to the real production phone number
+    const PRODUCTION_PHONE = "573000000000";
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Procesando...";
+
+        const productoId = (
+            document.getElementById("productoSelect") as HTMLSelectElement
+        ).value;
+        const cantidad = (
+            document.getElementById("cantidadInput") as HTMLInputElement
+        ).value;
+
+        try {
+            const response = await fetch("/api/production/launch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    producto_id: productoId,
+                    cantidad: Number(cantidad),
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Prepare WhatsApp Link
+                const { productName, quantity, ingredients } = result.data.data;
+
+                // Format:
+                // 🚀 Nueva Orden de Producción
+                // 📦 Producto: [Name]
+                // 🔢 Cantidad: [Qty]
+                //
+                // 📝 Lista de Preparación (Mise en place):
+                // - [Qty] [Unit] [Insumo]
+
+                let message = `🚀 *Nueva Orden de Producción*\n\n`;
+                message += `📦 *Producto:* ${productName}\n`;
+                message += `🔢 *Cantidad:* ${quantity}\n\n`;
+                message += `📝 *Lista de Preparación (Mise en place):*\n`;
+
+                ingredients.forEach((ing: any) => {
+                    message += `- ${ing.cantidad} ${ing.unidad} ${ing.nombre}\n`;
+                });
+
+                const encodedMessage = encodeURIComponent(message);
+                whatsappBtn.href = `https://wa.me/${PRODUCTION_PHONE}?text=${encodedMessage}`;
+
+                successModal.showModal();
+                form.reset();
+            } else {
+                alert("Error: " + result.message);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Hubo un error de conexión.");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Ejecutar Producción";
+        }
+    });
+
+    closeModalBtn?.addEventListener("click", () => {
+        successModal.close();
+    });
+</script>
+
+<style>
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    dialog[open] {
+        animation: fade-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    dialog::backdrop {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+    }
+</style>
