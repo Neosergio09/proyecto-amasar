@@ -170,8 +170,28 @@ const productList = productsWithRecipes || [];
                             d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.658-.698c.983.586 2.051.968 3.284.972l.004.001c3.177 0 5.765-2.587 5.765-5.766.001-5.632-4.062-5.772-6.251-6.16zM5.838 12.012c.002-3.415 2.78-6.194 6.196-6.194 3.414.004 6.19 2.78 6.191 6.193-.001 3.42-2.779 6.193-6.192 6.193-1.07-.001-2.062-.279-2.909-.731l-3.219.845.859-3.136c-.538-.938-.857-2.022-.858-3.17z"
                         ></path>
                     </svg>
-                    Enviar Orden por WhatsApp
+                    Elegir Contacto WhatsApp
                 </a>
+                <button
+                    id="copyBtn"
+                    class="flex items-center justify-center gap-2 w-full py-4 bg-orange-100 text-orange-600 font-bold rounded-xl hover:bg-orange-200 transition-colors"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        ></path>
+                    </svg>
+                    Copiar Instrucciones
+                </button>
                 <button
                     id="closeModalBtn"
                     class="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
@@ -192,10 +212,10 @@ const productList = productsWithRecipes || [];
     const whatsappBtn = document.getElementById(
         "whatsappBtn",
     ) as HTMLAnchorElement;
+    const copyBtn = document.getElementById("copyBtn") as HTMLButtonElement;
     const closeModalBtn = document.getElementById("closeModalBtn");
 
-    // Change this to the real production phone number
-    const PRODUCTION_PHONE = "573000000000";
+    let currentMessageText = "";
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -222,8 +242,22 @@ const productList = productsWithRecipes || [];
             const result = await response.json();
 
             if (response.ok) {
+                console.log("API Response:", result);
+
+                // Allow fallback in case the result is wrapped or flat
+                const data = result.data?.data || result.data || result;
+
+                if (!data || !data.productName) {
+                    alert(
+                        "Error: No se pudieron obtener los detalles de la producción para generar las instrucciones.",
+                    );
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Ejecutar Producción";
+                    return;
+                }
+
                 // Prepare WhatsApp Link
-                const { productName, quantity, ingredients } = result.data.data;
+                const { productName, quantity, ingredients } = data;
 
                 // Format:
                 // 🚀 Nueva Orden de Producción
@@ -242,8 +276,11 @@ const productList = productsWithRecipes || [];
                     message += `- ${ing.cantidad} ${ing.unidad} ${ing.nombre}\n`;
                 });
 
+                currentMessageText = message; // Save for copying
                 const encodedMessage = encodeURIComponent(message);
-                whatsappBtn.href = `https://wa.me/${PRODUCTION_PHONE}?text=${encodedMessage}`;
+
+                // Generic WhatsApp link to open contact picker
+                whatsappBtn.href = `https://wa.me/?text=${encodedMessage}`;
 
                 successModal.showModal();
                 form.reset();
@@ -256,6 +293,27 @@ const productList = productsWithRecipes || [];
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerText = "Ejecutar Producción";
+        }
+    });
+
+    copyBtn?.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(currentMessageText);
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                ¡Copiado!
+            `;
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+            }, 2000);
+        } catch (err) {
+            console.error("Failed to copy text: ", err);
+            alert(
+                "No se pudo copiar el texto al portapapeles. Es posible que el navegador bloquee esta acción.",
+            );
         }
     });
 
