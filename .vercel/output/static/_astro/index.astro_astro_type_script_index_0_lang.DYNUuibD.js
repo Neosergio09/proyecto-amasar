@@ -1,0 +1,1 @@
+import{E as t,A as a}from"./embla-carousel-autoplay.esm.DbqMuwPS.js";const e=()=>{const o=document.getElementById("favoritos-carousel");o&&t(o,{loop:!0,align:"start"},[a({delay:3e3,stopOnInteraction:!1})])};e();document.addEventListener("astro:page-load",e);
