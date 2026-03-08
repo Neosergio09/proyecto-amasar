@@ -320,7 +320,7 @@ const { data: destacados } = await supabase
     const carouselNode = document.getElementById("favoritos-carousel");
     if (carouselNode) {
       EmblaCarousel(carouselNode, { loop: true, align: "start" }, [
-        Autoplay({ delay: 3000, stopOnInteraction: false }),
+        Autoplay({ delay: 2000, stopOnInteraction: false }),
       ]);
     }
   };
