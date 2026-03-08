@@ -1,0 +1,53 @@
+
+> amasar-web@0.0.1 build
+> astro build
+
+15:04:30 [content] Syncing content
+15:04:30 [content] Synced content
+15:04:30 [types] Generated 36ms
+15:04:30 [build] output: "server"
+15:04:30 [build] mode: "server"
+15:04:30 [build] directory: /mnt/e069394d-1499-490f-8c02-e3d8d80039a1/Proyectos/AmasarS/proyecto-amasar/dist/
+15:04:30 [build] adapter: @astrojs/vercel
+15:04:30 [build] Collecting build info...
+15:04:30 [build] ✓ Completed in 90ms.
+15:04:30 [build] Building server entrypoints...
+15:04:32 [vite] ✓ built in 1.85s
+15:04:32 [build] ✓ Completed in 1.88s.
+
+ building client (vite) 
+15:04:32 [vite] transforming...
+15:04:33 [vite] ✓ 78 modules transformed.
+15:04:33 [vite] rendering chunks...
+15:04:33 [vite] computing gzip size...
+15:04:33 [vite] dist/client/_astro/index.astro_astro_type_script_index_0_lang.DYNUuibD.js                 0.26 kB │ gzip:  0.23 kB
+15:04:33 [vite] dist/client/_astro/login.astro_astro_type_script_index_0_lang.BYe3RySO.js                 0.47 kB │ gzip:  0.33 kB
+15:04:33 [vite] dist/client/_astro/AdminLayout.astro_astro_type_script_index_0_lang.LiSmN22i.js           0.69 kB │ gzip:  0.34 kB
+15:04:33 [vite] dist/client/_astro/dashboard.astro_astro_type_script_index_0_lang.B0Lmk_-Q.js             0.77 kB │ gzip:  0.44 kB
+15:04:33 [vite] dist/client/_astro/login.astro_astro_type_script_index_0_lang.CgInJ6AA.js                 0.80 kB │ gzip:  0.46 kB
+15:04:33 [vite] dist/client/_astro/nuevo.astro_astro_type_script_index_0_lang.DxqieLfk.js                 1.47 kB │ gzip:  0.79 kB
+15:04:33 [vite] dist/client/_astro/inventario.astro_astro_type_script_index_0_lang.DWZITuOg.js            2.34 kB │ gzip:  0.89 kB
+15:04:33 [vite] dist/client/_astro/pedidos.astro_astro_type_script_index_0_lang.6TRFQlsK.js               2.60 kB │ gzip:  1.04 kB
+15:04:33 [vite] dist/client/_astro/index.astro_astro_type_script_index_0_lang.BwJGUcZJ.js                 3.23 kB │ gzip:  1.54 kB
+15:04:33 [vite] dist/client/_astro/historial.astro_astro_type_script_index_0_lang.DFnENqff.js             3.90 kB │ gzip:  1.61 kB
+15:04:33 [vite] dist/client/_astro/pedidos.astro_astro_type_script_index_0_lang.Bz_4V4lT.js               4.01 kB │ gzip:  1.58 kB
+15:04:33 [vite] dist/client/_astro/confirmar.astro_astro_type_script_index_0_lang.KJWT0iyG.js             4.12 kB │ gzip:  1.90 kB
+15:04:33 [vite] dist/client/_astro/productos.astro_astro_type_script_index_0_lang.BmCJgUJS.js             4.27 kB │ gzip:  2.08 kB
+15:04:33 [vite] dist/client/_astro/index.astro_astro_type_script_index_0_lang.Dpj_aohU.js                 4.69 kB │ gzip:  1.96 kB
+15:04:33 [vite] dist/client/_astro/PerformanceMonitor.astro_astro_type_script_index_0_lang.BCK4DqX8.js    5.99 kB │ gzip:  2.46 kB
+15:04:33 [vite] dist/client/_astro/clientes.astro_astro_type_script_index_0_lang.B4_ZaZRt.js              7.55 kB │ gzip:  2.62 kB
+15:04:33 [vite] dist/client/_astro/ClientRouter.astro_astro_type_script_index_0_lang.CDGfc0hd.js         15.36 kB │ gzip:  5.28 kB
+15:04:33 [vite] dist/client/_astro/embla-carousel-autoplay.esm.DbqMuwPS.js                               20.82 kB │ gzip:  8.41 kB
+15:04:33 [vite] dist/client/_astro/nuevo.astro_astro_type_script_index_0_lang.MybiplEm.js                55.29 kB │ gzip: 22.02 kB
+15:04:33 [vite] dist/client/_astro/supabase.tbwPPwye.js                                                 171.76 kB │ gzip: 45.74 kB
+15:04:33 [vite] ✓ built in 692ms
+
+ prerendering static routes 
+15:04:33 ✓ Completed in 18ms.
+
+15:04:33 [build] Rearranging server assets...
+15:04:33 [@astrojs/vercel] Bundling function ../../../../dist/server/entry.mjs
+15:04:34 [@astrojs/sitemap] `sitemap-index.xml` created at `dist/client`
+15:04:34 [@astrojs/vercel] Copying static files to .vercel/output/static
+15:04:34 [build] Server built in 4.12s
+15:04:34 [build] Complete!
