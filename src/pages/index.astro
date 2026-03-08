@@ -13,7 +13,7 @@ const description =
 const { data: destacados } = await supabase
   .from("productos")
   .select("id, nombre, descripcion, imagen_url, categoria")
-  .limit(3);
+  .limit(9);
 ---
 
 <MainLayout title={title} description={description}>
@@ -189,19 +189,44 @@ const { data: destacados } = await supabase
         <div class="h-1 w-20 bg-primary mx-auto"></div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-8">
         {
           [
             {
               name: "Galletas",
               desc: "Decoradas y personalizadas",
               icon: "🍪",
+              href: "/productos/galletas",
             },
-            { name: "Chocolatería", desc: "Detalles que enamoran", icon: "🍫" },
-            { name: "Café", desc: "De origen para tu oficina", icon: "☕" },
-            { name: "Jugos", desc: "100% naturales y frescos", icon: "🥤" },
+            {
+              name: "Chocolatería",
+              desc: "Detalles que enamoran",
+              icon: "🍫",
+              href: "/productos/chocolateria",
+            },
+            {
+              name: "Café",
+              desc: "De origen para tu oficina",
+              icon: "☕",
+              href: "/productos/cafe",
+            },
+            {
+              name: "Jugos",
+              desc: "100% naturales y frescos",
+              icon: "🥤",
+              href: "/productos/jugos",
+            },
+            {
+              name: "Gelatina",
+              desc: "Postres coloridos y deliciosos",
+              icon: "🍮",
+              href: "/productos/gelatina",
+            },
           ].map((cat) => (
-            <div class="group p-10 rounded-[2.5rem] bg-white border border-slate-100 hover:border-primary transition-all hover:shadow-2xl text-center">
+            <a
+              href={cat.href}
+              class="group p-10 rounded-[2.5rem] bg-white border border-slate-100 hover:border-primary transition-all hover:shadow-2xl text-center block"
+            >
               <span
                 class="text-5xl mb-6 block transform group-hover:scale-110 transition-transform"
                 aria-hidden="true"
@@ -214,7 +239,7 @@ const { data: destacados } = await supabase
               <p class="text-slate-800 text-xs uppercase tracking-widest font-black">
                 {cat.desc}
               </p>
-            </div>
+            </a>
           ))
         }
       </div>
@@ -243,38 +268,69 @@ const { data: destacados } = await supabase
               Ver catálogo completo
             </a>
           </div>
-          <div class="grid md:grid-cols-3 gap-12">
-            {destacados.map((prod) => (
-              <article class="group">
-                <div class="aspect-square bg-slate-50 rounded-[3rem] mb-6 overflow-hidden border border-slate-100">
-                  <Image
-                    src={prod.imagen_url}
-                    alt={`Producto: ${prod.nombre}`}
-                    width={400}
-                    height={400}
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    loading="lazy"
-                    decoding="async"
-                    fetchpriority="low"
-                  />
+          <div
+            class="embla overflow-hidden w-full cursor-grab active:cursor-grabbing"
+            id="favoritos-carousel"
+          >
+            <div class="embla__container flex -ml-6">
+              {destacados.map((prod) => (
+                <div class="embla__slide flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.333%] min-w-0 pl-6">
+                  <article class="group h-full flex flex-col p-4 bg-white rounded-[3rem] border border-slate-100 shadow-sm relative isolate">
+                    <div class="aspect-square bg-slate-50 rounded-[2rem] mb-6 overflow-hidden relative isolate">
+                      <Image
+                        src={prod.imagen_url}
+                        alt={`Producto: ${prod.nombre}`}
+                        width={400}
+                        height={400}
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 pointer-events-none select-none"
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low"
+                      />
+                    </div>
+                    <div class="px-2 flex flex-col flex-grow">
+                      <h3 class="font-serif text-2xl text-secondary mb-2">
+                        {prod.nombre}
+                      </h3>
+                      <p class="text-slate-800 text-sm mb-4 line-clamp-2 flex-grow">
+                        {prod.descripcion}
+                      </p>
+                      <div class="mt-auto pt-2">
+                        <p class="text-orange-950 font-black text-xs uppercase tracking-widest bg-primary/10 inline-block px-3 py-1 rounded-lg">
+                          Consultar disponibilidad
+                        </p>
+                      </div>
+                    </div>
+                  </article>
                 </div>
-                <h3 class="font-serif text-2xl text-secondary mb-2">
-                  {prod.nombre}
-                </h3>
-                <p class="text-slate-800 text-sm mb-4 line-clamp-2">
-                  {prod.descripcion}
-                </p>
-                <p class="text-orange-950 font-black text-xs uppercase tracking-widest bg-primary/10 inline-block px-3 py-1 rounded-lg">
-                  Consultar disponibilidad
-                </p>
-              </article>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
     )
   }
 </MainLayout>
+
+<script>
+  import EmblaCarousel from "embla-carousel";
+  import Autoplay from "embla-carousel-autoplay";
+
+  const initCarousel = () => {
+    const carouselNode = document.getElementById("favoritos-carousel");
+    if (carouselNode) {
+      EmblaCarousel(carouselNode, { loop: true, align: "start" }, [
+        Autoplay({ delay: 3000, stopOnInteraction: false }),
+      ]);
+    }
+  };
+
+  // Executed when DOM is ready
+  initCarousel();
+
+  // Support for View Transitions
+  document.addEventListener("astro:page-load", initCarousel);
+</script>
 
 <style>
   @keyframes bounce-slow {
