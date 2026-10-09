@@ -93,8 +93,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
         if (profileError || !profile) {
             console.error("Error de sincronización:", profileError || "Perfil no encontrado en DB");
 
-            // Fallback: Intentar recuperar rol desde user_metadata
-            const metaRole = user.user_metadata?.role;
+            // Fallback: Intentar recuperar rol desde app_metadata
+            // (user_metadata NO: el propio usuario puede editarlo con auth.updateUser)
+            const metaRole = user.app_metadata?.role;
             if (metaRole) {
                 console.warn(`⚠️ Recuperando acceso vía Metadata para usuario: ${user.id} (Rol: ${metaRole})`);
                 locals.user = user;
