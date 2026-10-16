@@ -6,7 +6,7 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   // URL de la página, requisito para generar el Sitemap e indexación correcta
-  site: 'https://amasar.co',
+  site: 'https://amasarsya.com',
   // 1. MODO SERVIDOR (VITAL)
   // Esto permite que tus páginas con 'prerender = false' funcionen.
   // Sin esto, Vercel no sabe que debe procesar datos en tiempo real.
