@@ -1,6 +1,6 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
-import { supabase } from "../../lib/supabase";
+import { getSupabaseServer } from "../../lib/supabase";
 
 // 1. SSR ACTIVO
 // Auth handled by middleware
@@ -13,6 +13,9 @@ import { supabase } from "../../lib/supabase";
 // }
 // if (!session) { (Logic in middleware) }
 export const prerender = false;
+
+// Cliente con la sesión del admin: pedidos y contactos no son legibles de forma anónima (RLS).
+const supabase = await getSupabaseServer(Astro.cookies);
 
 const title = "Escritorio de Control | Amasar";
 
