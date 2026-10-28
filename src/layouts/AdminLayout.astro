@@ -11,7 +11,7 @@ interface Props {
 const { title = "Panel de Control" } = Astro.props;
 
 // 1. Fetch User Data for Header
-const supabase = await getSupabaseServer(Astro.cookies);
+const supabase = await getSupabaseServer(Astro);
 const {
     data: { user },
 } = await supabase.auth.getUser();
@@ -284,16 +284,12 @@ const navItems = [
         </main>
 
         <script>
-            import { supabase } from "../lib/supabase";
+            import { supabase } from "../lib/supabase-browser";
 
             const logoutBtn = document.getElementById("logoutBtn");
             logoutBtn?.addEventListener("click", async () => {
+                // signOut borra también las cookies de sesión
                 await supabase.auth.signOut();
-                // Clear cookies
-                document.cookie =
-                    "sb-access-token=; path=/; max-age=0; SameSite=Lax; Secure";
-                document.cookie =
-                    "sb-refresh-token=; path=/; max-age=0; SameSite=Lax; Secure";
                 window.location.href = "/admin/login";
             });
 

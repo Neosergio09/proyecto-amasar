@@ -15,7 +15,7 @@ import { getSupabaseServer } from "../../lib/supabase";
 export const prerender = false;
 
 // Cliente con la sesión del admin: pedidos y contactos no son legibles de forma anónima (RLS).
-const supabase = await getSupabaseServer(Astro.cookies);
+const supabase = await getSupabaseServer(Astro);
 
 const title = "Escritorio de Control | Amasar";
 
@@ -189,7 +189,7 @@ const getBadgeStyles = (tipo: string | null) => {
   </section>
 
   <script>
-    import { supabase } from "../../lib/supabase";
+    import { supabase } from "../../lib/supabase-browser";
 
     const initDashboard = async () => {
       // 1. Auth Check

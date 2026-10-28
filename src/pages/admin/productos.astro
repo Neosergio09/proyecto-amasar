@@ -5,7 +5,7 @@ import { Image } from "astro:assets";
 import type { Product } from "../../types/database";
 
 // Auth & Data Fetching (SSR)
-const supabase = await getSupabaseServer(Astro.cookies);
+const supabase = await getSupabaseServer(Astro);
 // Auth handled by middleware
 // const {
 //   data: { session },
@@ -359,7 +359,7 @@ try {
 </AdminLayout>
 
 <script>
-  import { supabase } from "../../lib/supabase";
+  import { supabase } from "../../lib/supabase-browser";
 
   const inputs = document.querySelectorAll(".editable-input");
   const toast = document.getElementById("toast");

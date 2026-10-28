@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import { createServerClient, parseCookieHeader } from '@supabase/ssr';
+import type { APIContext } from 'astro';
 
 // Variables de entorno
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || import.meta.env.SUPABASE_URL;
@@ -43,26 +45,27 @@ export function getOptimizedImage(url: string | null, width = 800) {
 }
 
 /**
- * Creates a Supabase client for Server-Side Rendering (SSR) in Astro.
- * It reads the access token from cookies to authenticate the user.
+ * Cliente de Supabase ligado a la sesión del usuario (cookies de @supabase/ssr).
+ * Se crea una sola vez por petición (en el middleware) y se reutiliza desde locals,
+ * así el refresco del token se hace una vez y las cookies nuevas se guardan en la respuesta.
  */
-export const getSupabaseServer = async (cookies: any) => {
-  const accessToken = cookies.get("sb-access-token")?.value;
-  const refreshToken = cookies.get("sb-refresh-token")?.value;
+export const getSupabaseServer = async ({ request, cookies, locals }: Pick<APIContext, 'request' | 'cookies' | 'locals'>) => {
+  if (locals.supabase) return locals.supabase;
 
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
+  locals.supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return parseCookieHeader(request.headers.get('Cookie') ?? '').map(({ name, value }) => ({
+          name,
+          value: value ?? '',
+        }));
+      },
+      setAll(cookiesToSet, headers) {
+        cookiesToSet.forEach(({ name, value, options }) => cookies.set(name, value, options));
+        locals.supabaseHeaders = { ...locals.supabaseHeaders, ...headers };
+      },
     },
   });
 
-  if (accessToken && refreshToken) {
-    await client.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-  }
-
-  return client;
+  return locals.supabase;
 };

@@ -1,8 +1,9 @@
 import type { APIRoute } from "astro";
 import { getSupabaseServer } from "../../../lib/supabase";
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-    const supabase = await getSupabaseServer(cookies);
+export const POST: APIRoute = async (context) => {
+    const { request } = context;
+    const supabase = await getSupabaseServer(context);
 
     try {
         let data;
