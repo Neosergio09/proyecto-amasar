@@ -1,0 +1,28 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+
+const title = "Página no encontrada | Amasar";
+const description = "La página que buscas no existe o cambió de dirección.";
+---
+
+<MainLayout title={title} description={description}>
+  <section class="bg-background min-h-[70vh] py-24 flex items-center">
+    <div class="max-w-xl mx-auto px-6 text-center">
+      <p class="text-[10px] uppercase tracking-[0.3em] text-primary font-black mb-4">Error 404</p>
+      <h1 class="text-5xl md:text-6xl font-serif text-secondary mb-6">
+        Esta galleta <span class="text-primary italic">no salió</span> del horno
+      </h1>
+      <p class="text-slate-500 leading-relaxed mb-10">
+        La página que buscas no existe o cambió de dirección.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/" class="bg-secondary text-white px-10 py-4 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all">
+          Ir al inicio
+        </a>
+        <a href="/productos" class="bg-white text-secondary px-10 py-4 rounded-full font-black uppercase text-[10px] tracking-widest border border-secondary/10 hover:border-primary hover:text-primary transition-all">
+          Ver productos
+        </a>
+      </div>
+    </div>
+  </section>
+</MainLayout>

@@ -66,7 +66,7 @@ RESEND_API_KEY="re_xxxxxxxx"
 
 ## 🛢️ Base de datos
 
-Los scripts SQL están en la raíz del proyecto. Ejecútalos en el SQL Editor de Supabase:
+Los scripts SQL están en `db/` y se ejecutan en el SQL Editor de Supabase. Los primeros son el esquema inicial; los fechados son los cambios de seguridad aplicados después:
 
 | Archivo | Contenido |
 | :--- | :--- |
@@ -74,6 +74,9 @@ Los scripts SQL están en la raíz del proyecto. Ejecútalos en el SQL Editor de
 | `inventory_triggers.sql` | Triggers de estado de pedidos e inventario |
 | `production_module.sql` | Tablas `recetas` y `receta_ingredientes` y la función `execute_production_order` |
 | `gastos.sql` | Tabla de gastos |
+| `2026-10-28-seguridad-rls.sql` | RLS de perfiles, storage y recetas; `handle_new_user` |
+| `2026-10-28-contactos-rastreo.sql` | Tabla `contactos`, función `rastrear_pedido` y lectura de pedidos solo vendedor/admin |
+| `2026-10-28-revocar-execute-anon.sql` | Quita a `anon` la ejecución de las funciones de pedidos y producción |
 
 ---
 
