@@ -47,7 +47,7 @@ const description = "Panel de control privado para la gestión de Amasar SIA SAS
 </MainLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase';
+  import { supabaseBrowser as supabase } from '../../lib/supabase-browser';
 
   const loginForm = document.getElementById('loginForm') as HTMLFormElement;
   const errorMsg = document.getElementById('errorMessage');
@@ -57,7 +57,7 @@ const description = "Panel de control privado para la gestión de Amasar SIA SAS
     const email = (document.getElementById('email') as HTMLInputElement).value;
     const password = (document.getElementById('password') as HTMLInputElement).value;
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });

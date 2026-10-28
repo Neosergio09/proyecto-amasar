@@ -1,6 +1,6 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import { supabase } from '../../lib/supabase';
+const supabase = Astro.locals.supabase;
 
 // 1. SSR ACTIVO
 export const prerender = false;
@@ -165,17 +165,12 @@ const getBadgeStyles = (tipo: string | null) => {
 </MainLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase';
+  import '../../scripts/admin-logout';
 
-  const initDashboard = async () => {
-    // 1. Auth Check
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { 
-      window.location.href = '/admin/login'; 
-      return; 
-    }
+  const initDashboard = () => {
+    // La sesión se valida en el servidor (src/middleware.ts)
 
-    // 2. LÓGICA DE FILTRADO
+    // 1. LÓGICA DE FILTRADO
     const searchInput = document.getElementById('searchInput') as HTMLInputElement | null;
     const typeFilter = document.getElementById('typeFilter') as HTMLSelectElement | null;
     const contactRows = document.querySelectorAll('.contact-row') as NodeListOf<HTMLElement>;
@@ -200,13 +195,6 @@ const getBadgeStyles = (tipo: string | null) => {
 
     searchInput?.addEventListener('input', performFilter);
     typeFilter?.addEventListener('change', performFilter);
-
-    // 3. Logout
-    const logoutBtn = document.getElementById('logoutBtn');
-    logoutBtn?.addEventListener('click', async () => {
-      const { error } = await supabase.auth.signOut();
-      if (!error) window.location.href = '/admin/login';
-    });
   };
 
   // Escuchar el evento de carga de Astro (compatible con View Transitions)

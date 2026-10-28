@@ -1,6 +1,6 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import { supabase } from '../../lib/supabase';
+const supabase = Astro.locals.supabase;
 
 const title = "Administrar Productos | Amasar";
 
@@ -137,7 +137,8 @@ const { data: productos } = await supabase
 </MainLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase';
+  import { supabaseBrowser as supabase } from '../../lib/supabase-browser';
+  import '../../scripts/admin-logout';
 
   const initProductManager = () => {
     const form = document.getElementById('productForm') as HTMLFormElement;
@@ -170,7 +171,7 @@ const { data: productos } = await supabase
       const fileExt = file.name.split('.').pop();
       const uniqueName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('productos')
         .upload(uniqueName, file);
 

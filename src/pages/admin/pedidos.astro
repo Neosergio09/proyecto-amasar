@@ -1,6 +1,6 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import { supabase } from '../../lib/supabase';
+const supabase = Astro.locals.supabase;
 
 // 1. SSR ACTIVO: Crucial para ver cambios en tiempo real
 export const prerender = false;
@@ -117,10 +117,10 @@ const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "
 </MainLayout>
 
 <script>
-  import { supabase } from '../../lib/supabase';
+  import { supabaseBrowser as supabase } from '../../lib/supabase-browser';
+  import '../../scripts/admin-logout';
 
   const initOrders = () => {
-    console.log("🔍 [TRAZA 1]: Script de Pedidos inicializado correctamente.");
 
     const form = document.getElementById('orderForm') as HTMLFormElement;
 
@@ -146,19 +146,16 @@ const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "
 
     // 2. LÓGICA DE ACTUALIZACIÓN CON TRAZABILIDAD
     const updateButtons = document.querySelectorAll('.update-btn');
-    console.log(`🔍 [TRAZA 2]: Se encontraron ${updateButtons.length} botones de actualización.`);
 
     updateButtons.forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const button = e.currentTarget as HTMLButtonElement;
         const id = button.getAttribute('data-id');
-        console.log("🔍 [TRAZA 3]: Botón clickeado. ID del pedido:", id);
         
         // Localizamos el selector de la misma fila
         const row = button.closest('tr');
         const select = row?.querySelector('.status-select') as HTMLSelectElement;
         const nuevoEstado = select.value;
-        console.log("🔍 [TRAZA 4]: Nuevo estado capturado:", nuevoEstado);
 
         if (!id || !nuevoEstado) {
           console.error("❌ [ERROR]: No se pudo obtener el ID o el Estado del DOM.");
@@ -169,21 +166,19 @@ const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "
         button.innerText = "...";
         button.disabled = true;
 
-        console.log("🔍 [TRAZA 5]: Enviando actualización a Supabase...");
 
-        const { data, error, status } = await supabase
+        const { error } = await supabase
           .from('pedidos')
           .update({ estado: nuevoEstado })
           .eq('id', id)
           .select(); // El .select() ayuda a confirmar que el cambio ocurrió
 
         if (error) {
-          console.error("❌ [TRAZA 6]: Error de Supabase:", error.message);
+          console.error("Error al actualizar pedido:", error.message);
           alert("Error al actualizar: " + error.message);
           button.innerText = "Guardar";
           button.disabled = false;
         } else {
-          console.log("✅ [TRAZA 7]: ¡Éxito! Respuesta de la DB:", data, "Status:", status);
           
           // Animación de éxito
           button.innerText = "¡OK!";
