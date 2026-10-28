@@ -129,9 +129,10 @@ const estadosLogistica = ["Preparación", "En horno", "Empacado", "En camino", "
       e.preventDefault();
       const formData = new FormData(form);
       
-      const year = 2026;
-      const randomId = Math.floor(1000 + Math.random() * 9000);
-      const generatedTag = `AM-${year}-${randomId}`;
+      // Código no adivinable: 8 caracteres aleatorios (40 bits)
+      const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const randomId = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => alfabeto[b % alfabeto.length]).join('');
+      const generatedTag = `AM-${new Date().getFullYear()}-${randomId}`;
 
       const { error } = await supabase.from('pedidos').insert([{
         tag_rastreo: generatedTag,
