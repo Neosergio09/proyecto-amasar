@@ -3,7 +3,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { getSupabaseServer } from "../../../lib/supabase";
 
 // Auth Guard
-const supabaseServer = await getSupabaseServer(Astro.cookies);
+const supabaseServer = await getSupabaseServer(Astro);
 // Auth handled by middleware
 // const {
 //     data: { session },
@@ -295,7 +295,7 @@ const supabaseServer = await getSupabaseServer(Astro.cookies);
 </AdminLayout>
 
 <script>
-    import { supabase } from "../../../lib/supabase";
+    import { supabase } from "../../../lib/supabase-browser";
     import imageCompression from "browser-image-compression";
 
     const form = document.getElementById(

@@ -6,7 +6,7 @@ import { getSupabaseServer } from "../../lib/supabase";
 export const prerender = false;
 
 // Cliente con la sesión del admin: pedidos y contactos no son legibles de forma anónima (RLS).
-const supabase = await getSupabaseServer(Astro.cookies);
+const supabase = await getSupabaseServer(Astro);
 
 const title = "Gestión de Pedidos y Rastreo | Amasar";
 
@@ -136,7 +136,7 @@ const estadosLogistica = [
 </AdminLayout>
 
 <script>
-  import { supabase } from "../../lib/supabase";
+  import { supabase } from "../../lib/supabase-browser";
 
   const initOrders = () => {
     console.log("🔍 [TRAZA 1]: Script de Pedidos inicializado.");

@@ -3,7 +3,7 @@ import VendedorLayout from "../../layouts/VendedorLayout.astro";
 import { getSupabaseServer } from "../../lib/supabase";
 
 // 1. Auth Check
-const supabase = await getSupabaseServer(Astro.cookies);
+const supabase = await getSupabaseServer(Astro);
 const {
     data: { user },
 } = await supabase.auth.getUser();
@@ -204,7 +204,7 @@ const estadosLogistica = {
 </VendedorLayout>
 
 <script>
-    import { supabase } from "../../lib/supabase";
+    import { supabase } from "../../lib/supabase-browser";
 
     document.addEventListener("DOMContentLoaded", () => {
          // --- WhatsApp Re-send Logic ---
