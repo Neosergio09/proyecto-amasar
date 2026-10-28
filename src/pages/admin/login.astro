@@ -3,6 +3,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
 
 const title = "Acceso Administrativo | Amasar";
 const description = "Panel de control privado para la gestión de Amasar SIA SAS.";
+const noAutorizado = Astro.url.searchParams.get('error') === 'no-autorizado';
 ---
 
 <MainLayout title={title} description={description}>
@@ -31,7 +32,13 @@ const description = "Panel de control privado para la gestión de Amasar SIA SAS
             Entrar al Sistema
           </button>
         </form>
-        
+
+        {noAutorizado && (
+          <p class="mt-6 text-center text-xs text-red-500 font-bold bg-red-50 p-4 rounded-xl border border-red-100">
+            Tu usuario no tiene permisos de administrador.
+          </p>
+        )}
+
         <p id="errorMessage" class="hidden mt-6 text-center text-xs text-red-500 font-bold bg-red-50 p-4 rounded-xl border border-red-100 animate-shake">
           Credenciales incorrectas. Intenta de nuevo.
         </p>
