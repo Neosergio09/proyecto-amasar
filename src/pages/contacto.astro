@@ -78,6 +78,11 @@ const description =
         class="bg-white p-10 md:p-14 rounded-[3.5rem] shadow-2xl border border-primary/5"
       >
         <form id="contactForm" class="space-y-6">
+          <!-- Honeypot anti-bots: oculto para personas, los bots suelen rellenarlo -->
+          <div class="hidden" aria-hidden="true">
+            <label>No llenar este campo <input type="text" name="sitio_web" tabindex="-1" autocomplete="off" /></label>
+          </div>
+
           <div class="grid grid-cols-1 gap-6">
             <div>
               <label
@@ -103,6 +108,7 @@ const description =
               <input
                 type="text"
                 name="panaderia"
+                maxlength="120"
                 placeholder="Ej: Masa Madre, Cumpleaños de Luciana..."
                 required
                 class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
@@ -119,6 +125,7 @@ const description =
               <input
                 type="text"
                 name="nombre"
+                maxlength="120"
                 required
                 class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
               />
@@ -131,6 +138,8 @@ const description =
               <input
                 type="tel"
                 name="whatsapp"
+                inputmode="numeric"
+                maxlength="16"
                 required
                 placeholder="3XX XXX XXXX"
                 class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
@@ -146,6 +155,7 @@ const description =
             <input
               type="email"
               name="email"
+              maxlength="254"
               required
               placeholder="ejemplo@correo.com"
               class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
@@ -175,6 +185,7 @@ const description =
             >
             <textarea
               name="mensaje"
+              maxlength="2000"
               rows="3"
               placeholder="Cuéntanos cantidades o fecha del evento..."
               class="w-full p-4 rounded-2xl bg-background border-none focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
