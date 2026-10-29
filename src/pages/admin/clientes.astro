@@ -23,8 +23,6 @@ const { data: vendedores, error: sellerError } = await supabase
 
 if (sellerError) {
     console.error("Error fetching vendedores:", sellerError);
-} else {
-    console.log("Total de perfiles encontrados:", vendedores?.length);
 }
 
 const clientList = clientes || [];
@@ -722,7 +720,6 @@ const sellerList = vendedores || [];
             createModal?.close();
             importModal?.close();
             editModal?.close();
-            console.log("Modal de cliente cerrado");
 
             // Reset Button States & Forms
             const saveNewBtn = document.getElementById(
@@ -838,8 +835,6 @@ const sellerList = vendedores || [];
                 longitud: lng,
             };
 
-            console.log("Enviando Vendedor ID:", vendedorId);
-            console.log("Sending to DB:", payload);
 
             try {
                 // 1. Insert without 'status' to let DB default handle it (avoids cache issues)
@@ -1011,7 +1006,6 @@ const sellerList = vendedores || [];
                 }
 
                 if (rowsToInsert.length > 0) {
-                    console.log("Sending Bulk to DB:", rowsToInsert);
                     try {
                         const { error } = await supabase
                             .from("clientes")
@@ -1087,8 +1081,6 @@ const sellerList = vendedores || [];
             (document.getElementById("editStatus") as HTMLSelectElement).value =
                 client.status || "activo";
 
-            console.log("Cargando datos en modal:", client);
-            console.log("Edit Open. Client Vendedor:", client.vendedor_id);
             editModal.showModal();
         });
     });
@@ -1125,12 +1117,6 @@ const sellerList = vendedores || [];
                 document.getElementById("editStatus") as HTMLSelectElement
             ).value;
 
-            // DEBUG: Trace Payload
-            console.log("--- SUBMITTING EDIT ---");
-            console.log("Client ID:", id);
-            console.log("Enviando Vendedor ID:", vendedorId);
-            console.log("Status:", status);
-
             try {
                 const payloadUpdate = {
                     nombre_comercial: nombre,
@@ -1142,7 +1128,6 @@ const sellerList = vendedores || [];
                     status: status,
                 };
 
-                console.log("Payload de actualización:", payloadUpdate);
 
                 const { data, error } = await supabase
                     .from("clientes")
@@ -1150,7 +1135,6 @@ const sellerList = vendedores || [];
                     .eq("id", id)
                     .select();
 
-                console.log("Respuesta Supabase:", { data, error });
 
                 if (error) throw error;
 

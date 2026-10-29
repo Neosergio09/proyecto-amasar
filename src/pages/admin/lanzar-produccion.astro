@@ -240,7 +240,6 @@ const productList = productsWithRecipes || [];
             const result = await response.json();
 
             if (response.ok) {
-                console.log("API Response:", result);
 
                 // Allow fallback in case the result is wrapped or flat
                 const data = result.data?.data || result.data || result;
