@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { Resend } from "resend";
+import { supabase } from "../../lib/supabase";
 
 const TIPOS_CLIENTE = ["Panaderia", "Empresa", "Particular"];
 const INTERESES = ["Galletas", "Cafe", "Chocolateria", "Varios"];
@@ -61,6 +62,21 @@ export const POST: APIRoute = async ({ request }) => {
         return json({ message: "El WhatsApp debe ser un celular de 10 dígitos" }, 400);
     }
 
+    // 1. Guardar en la BD (tabla contactos, INSERT público por RLS): así el mensaje
+    // aparece en el dashboard aunque el correo falle.
+    const { error: dbError } = await supabase.from("contactos").insert({
+        tipo_cliente: tipoCliente,
+        panaderia_nombre: panaderia,
+        contacto_nombre: nombre,
+        email,
+        whatsapp,
+        interes_producto: interes || null,
+        mensaje: mensaje || null,
+    });
+    if (dbError) console.error("Error guardando contacto:", dbError.message);
+    const guardado = !dbError;
+
+    // 2. Avisar por correo
     const resend = new Resend(import.meta.env.RESEND_API_KEY);
     // RESEND_FROM debe ser un remitente de un dominio verificado en Resend (ej: "Amasar <contacto@amasarsya.com>").
     // onboarding@resend.dev solo entrega correos a la cuenta dueña de Resend.
@@ -95,15 +111,16 @@ export const POST: APIRoute = async ({ request }) => {
       `,
         });
 
-        if (error) {
-            // El detalle queda en los logs de Vercel; al cliente no se le expone.
-            console.error("Error de Resend:", error);
+        // El detalle queda en los logs de Vercel; al cliente no se le expone.
+        if (error) console.error("Error de Resend:", error);
+        if (error && !guardado) {
             return json({ message: "No pudimos enviar tu mensaje. Intenta de nuevo." }, 502);
         }
-
-        return json({ message: "¡Mensaje enviado con éxito!" }, 200);
     } catch (e) {
         console.error("Error en /api/contact:", e);
-        return json({ message: "Error interno del servidor" }, 500);
+        if (!guardado) return json({ message: "Error interno del servidor" }, 500);
     }
+
+    // Basta con que haya quedado guardado o enviado por correo
+    return json({ message: "¡Mensaje enviado con éxito!" }, 200);
 };

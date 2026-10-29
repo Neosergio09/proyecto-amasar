@@ -162,6 +162,16 @@ const getBadgeStyles = (tipo: string | null) => {
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter search-target">
                       {con.contacto_nombre}
                     </p>
+                    {con.email && (
+                      <a href={`mailto:${con.email}`} class="text-xs text-slate-500 hover:text-primary search-target">
+                        {con.email}
+                      </a>
+                    )}
+                    {con.mensaje && (
+                      <p class="text-xs text-slate-500 mt-2 max-w-md line-clamp-2" title={con.mensaje}>
+                        {con.mensaje}
+                      </p>
+                    )}
                   </td>
                   <td class="px-10 py-8 text-sm font-medium text-slate-600">
                     {con.interes_producto}
