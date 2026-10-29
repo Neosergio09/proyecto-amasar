@@ -255,7 +255,6 @@ if (!user) {
             created_at: new Date().toISOString(),
         };
 
-        console.log("Sending to DB:", payload);
 
         const { data, error } = await supabase
             .from("clientes")

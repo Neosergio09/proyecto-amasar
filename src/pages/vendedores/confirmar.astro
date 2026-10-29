@@ -327,7 +327,6 @@ if (!user) {
                     .getElementById("meta-data")
                     ?.getAttribute("data-vendedor-id");
 
-                console.table(cartItems); // Debug payload
 
                 // Map items to match RPC expected structure (cantidad instead of qty)
                 const detallesPayload = cartItems.map((item: any) => ({
