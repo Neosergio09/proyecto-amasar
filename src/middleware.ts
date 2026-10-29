@@ -84,7 +84,7 @@ const handleRequest = async (context: APIContext, next: MiddlewareNext) => {
         // Se asume que existe trigger en DB que crea perfil al crear usuario auth
         const { data: profile, error: profileError } = await supabase
             .from('perfiles')
-            .select('rol')
+            .select('rol, nombre')
             .eq('id', user.id)
             .single();
 
@@ -108,6 +108,7 @@ const handleRequest = async (context: APIContext, next: MiddlewareNext) => {
             }
         } else {
             rol = profile.rol;
+            locals.perfil = profile;
         }
 
         // Inyectar usuario y rol en locals para uso en páginas (si aplica)
