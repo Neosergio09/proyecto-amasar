@@ -240,7 +240,6 @@ const estadosLogistica = {
                 }
 
                 // 2. Build Message
-                const trackingUrl = `${window.location.origin}/rastreo/${tag}`;
                 const itemsList = items
                     .map((i: any) => `- ${i.qty}x ${i.nombre} ($${(i.precio * i.qty).toLocaleString()})`)
                     .join("\n");
@@ -253,9 +252,7 @@ const estadosLogistica = {
 
 ${itemsList}
 
-*Total: $${total.toLocaleString()}*
-
-Sigue tu pedido aquí: ${trackingUrl}`;
+*Total: $${total.toLocaleString()}*`;
 
                 const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(waMessage)}`;
                 
