@@ -77,6 +77,9 @@ Los scripts SQL están en `db/` y se ejecutan en el SQL Editor de Supabase. Los 
 | `2026-10-28-seguridad-rls.sql` | RLS de perfiles, storage y recetas; `handle_new_user` |
 | `2026-10-28-contactos-rastreo.sql` | Tabla `contactos`, función `rastrear_pedido` y lectura de pedidos solo vendedor/admin |
 | `2026-10-28-revocar-execute-anon.sql` | Quita a `anon` la ejecución de las funciones de pedidos y producción |
+| `2026-10-28-pedidos-vendedores.sql` | Crear, editar y cancelar pedidos con stock (vendedores); alta de clientes por vendedor |
+| `2026-10-29-contactos-email.sql` | Columna `email` en `contactos` |
+| `2026-10-29-precio-catalogo.sql` | Los pedidos usan el precio del catálogo, no el del navegador |
 
 ---
 
