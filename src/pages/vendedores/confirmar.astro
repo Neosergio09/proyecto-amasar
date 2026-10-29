@@ -368,8 +368,6 @@ if (!user) {
                 }
 
                 // 2. Preparar datos para WhatsApp
-                const trackingUrl = `${window.location.origin}/rastreo/${generatedTag}`;
-
                 const itemsList = cartItems
                     .map(
                         (i) =>
@@ -384,9 +382,7 @@ if (!user) {
 
 ${itemsList}
 
-*Total: $${total.toLocaleString()}*
-
-Sigue tu pedido aquí: ${trackingUrl}`;
+*Total: $${total.toLocaleString()}*`;
 
                 const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(waMessage)}`;
 
