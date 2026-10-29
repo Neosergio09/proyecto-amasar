@@ -5,5 +5,6 @@ declare namespace App {
     user?: import('@supabase/supabase-js').User;
     supabase?: import('@supabase/supabase-js').SupabaseClient;
     supabaseHeaders?: Record<string, string>;
+    perfil?: { rol: string; nombre: string | null };
   }
 }

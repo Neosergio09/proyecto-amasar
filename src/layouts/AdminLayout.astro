@@ -1,6 +1,5 @@
 ---
 import "../styles/global.css";
-import { getSupabaseServer } from "../lib/supabase";
 import { ClientRouter } from "astro:transitions";
 import "@fontsource/inter";
 
@@ -10,28 +9,10 @@ interface Props {
 
 const { title = "Panel de Control" } = Astro.props;
 
-// 1. Fetch User Data for Header
-const supabase = await getSupabaseServer(Astro);
-const {
-    data: { user },
-} = await supabase.auth.getUser();
-
-let profileName = "Administrador Principal";
-let profileEmail = "";
-
-if (user) {
-    profileEmail = user.email || "";
-    // Fetch profile name
-    const { data: profile } = await supabase
-        .from("perfiles")
-        .select("nombre")
-        .eq("id", user.id)
-        .single();
-
-    if (profile?.nombre) {
-        profileName = profile.nombre;
-    }
-}
+// 1. Datos del usuario para el header (el middleware ya los cargó)
+const user = Astro.locals.user;
+const profileName = Astro.locals.perfil?.nombre || "Administrador Principal";
+const profileEmail = user?.email || "";
 
 // Get current path for active menu highlighting
 const currentPath = Astro.url.pathname;
